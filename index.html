@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Цифровая визитка сотрудника · НИКАМЕД</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+  :root { --s: 1; }
+  body { min-height: 100vh; overflow-x: hidden; background: var(--white); }
+  i[data-lucide] { display: inline-block; }
+  [hidden] { display: none !important; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 32px; }
+
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 72px; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; }
+  .logo-img { height: 40px; width: auto; }
+  .logo span { margin-left: 6px; padding-left: 12px; border-left: 1px solid var(--line); font-size: 13px; font-weight: 500; color: var(--ink-3); }
+  .top__eco { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+
+  .hero { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 56px; align-items: center; min-height: calc(100vh - 72px); padding-bottom: 32px; }
+  .intro { max-width: 580px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent-ink); font-size: 13px; font-weight: 650; }
+  h1 { margin-top: 20px; font-size: clamp(34px, 4.1vw, 54px); line-height: 1.02; letter-spacing: -.035em; text-wrap: balance; }
+  h1 em { font-style: normal; color: var(--ink); background: linear-gradient(var(--accent), var(--accent)) 0 94% / 100% .12em no-repeat; }
+  .pitch { max-width: 50ch; margin-top: 18px; font-size: 17px; line-height: 1.55; color: var(--ink-2); }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 24px 0 0; padding: 0; list-style: none; }
+  .stats li { display: grid; }
+  .stats b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+  .stats span { font-size: 13px; color: var(--ink-3); text-wrap: balance; }
+
+  .picker { margin-top: 28px; padding: 20px; }
+  .picker__label { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; margin-bottom: 10px; font-size: 13px; font-weight: 700; }
+  .picker__label small { font-size: 13px; font-weight: 500; color: var(--ink-3); }
+  .people { display: flex; flex-wrap: wrap; gap: 6px; }
+  .person {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 12px 4px 4px;
+    border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--white); cursor: pointer;
+    font-size: 14px; font-weight: 600; transition: border-color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+  }
+  .person:hover { border-color: var(--line-strong); background: var(--surface); }
+  .person:active { transform: scale(.97); }
+  .person[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--white); }
+  .person__ava { position: relative; flex: none; }
+  .person__ava img, .person__ini { width: 34px; height: 34px; }
+  .person__ini { display: grid; place-items: center; border-radius: 50%; background: var(--surface-2); color: var(--ink-2); font-size: 12px; font-weight: 750; }
+  .person[aria-pressed="true"] .person__ini { background: rgba(255, 255, 255, .18); color: var(--white); }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .actions .btn { min-height: 48px; padding: 0 20px; }
+
+  /* QR рядом с телефоном: отсканировать и открыть визитку у себя */
+  .stage__inner { position: relative; }
+  .scan {
+    position: absolute; right: calc(-1 * clamp(32px, 11vw - 64px, 92px)); bottom: 76px; z-index: 4; display: grid; gap: 6px; width: 140px; padding: 10px 10px 9px;
+    border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); box-shadow: var(--shadow);
+    font-size: 12px; font-weight: 650; line-height: 1.2; text-align: center;
+  }
+  .scan__code { aspect-ratio: 1; }
+  .scan__code svg { display: block; width: 100%; height: 100%; }
+  .scan span { display: flex; align-items: center; justify-content: center; gap: 5px; }
+  .scan .i { color: var(--ink-2); }
+
+  .stage {
+    position: relative; isolation: isolate; display: grid; place-items: center; align-self: stretch; min-height: 560px; padding: 28px 16px;
+    border-radius: 16px; background: radial-gradient(var(--line-strong) 1px, transparent 1.2px) 0 0 / 18px 18px, var(--surface);
+  }
+  .stage::before {
+    content: ''; position: absolute; z-index: -1; inset: 12% 10%;
+    background: radial-gradient(closest-side at 40% 40%, rgba(191, 31, 50, .12), transparent), radial-gradient(closest-side at 62% 64%, rgba(45, 55, 72, .10), transparent);
+    filter: blur(8px);
+  }
+  .stage__cap { margin-top: 14px; font-size: 12.5px; color: var(--ink-3); text-align: center; }
+  .phone-slot { width: calc(399px * var(--s)); height: calc(836px * var(--s)); }
+  .phone {
+    position: relative; width: 399px; height: 836px; padding: 12px; border-radius: 58px; background: var(--dark);
+    box-shadow: inset 0 0 0 1.5px #3B3B3B, 0 0 0 1px rgba(17, 17, 17, .06), 0 50px 90px -40px rgba(17, 17, 17, .45);
+    transform: scale(var(--s)); transform-origin: 0 0;
+  }
+  .phone::before, .phone::after { content: ''; position: absolute; width: 3px; border-radius: 2px; background: #2A2A2A; }
+  .phone::before { left: -3px; top: 170px; height: 64px; box-shadow: 0 -52px 0 -8px #2A2A2A, 0 80px 0 0 #2A2A2A; }
+  .phone::after { right: -3px; top: 220px; height: 96px; }
+  .screen { position: relative; width: 375px; height: 812px; overflow: hidden; border-radius: 46px; background: var(--white); }
+  .statusbar { display: flex; align-items: center; justify-content: space-between; height: 50px; padding: 12px 30px 0 40px; font-size: 15px; font-weight: 650; }
+  .statusbar svg { display: block; }
+  .statusbar__icons { display: flex; align-items: center; gap: 6px; }
+  .island { position: absolute; top: 11px; left: 50%; z-index: 3; width: 120px; height: 35px; border-radius: 20px; background: var(--dark); transform: translateX(-50%); }
+  .screen iframe { display: block; width: 375px; height: 762px; border: 0; transition: opacity var(--dur-2) var(--ease); }
+  .screen.is-loading iframe { opacity: .35; }
+  .home-ind { position: absolute; bottom: 8px; left: 50%; z-index: 3; width: 134px; height: 5px; border-radius: 3px; background: rgba(17, 17, 17, .85); transform: translateX(-50%); pointer-events: none; }
+  @media (min-width: 900px) {
+    /* Телефон всегда целиком в окне: колонка превью прилипает и берёт высоту экрана */
+    .intro { align-self: center; }
+    .stage { position: sticky; top: 16px; align-self: start; height: calc(100vh - 104px); min-height: 440px; }
+  }
+
+  @media (max-width: 899px) {
+    .hero { grid-template-columns: minmax(0, 1fr); gap: 32px; min-height: 0; padding-top: 8px; }
+    .intro { max-width: none; }
+  }
+  @media (max-width: 479px) {
+    .wrap { padding: 0 16px; }
+    .top { height: 60px; }
+    .logo span, .top__eco { display: none; }
+    .pitch { font-size: 16px; }
+    .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .stats b { font-size: 19px; }
+    .stats span { font-size: 12px; line-height: 1.35; }
+    .picker__label { flex-direction: column; align-items: flex-start; gap: 2px; }
+    .stage { display: none; }
+    .picker { padding: 16px; }
+    /* Сотрудники — одна лента со свайпом, действие закреплено снизу экрана */
+    .people { flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 16px; margin: 0 -16px; padding: 0 16px 4px; scrollbar-width: none; }
+    .people::-webkit-scrollbar { display: none; }
+    .person { flex: none; scroll-snap-align: start; }
+    .actions {
+      position: sticky; bottom: 0; z-index: 5; flex-wrap: nowrap; margin: 16px -16px -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius);
+      background: rgba(255, 255, 255, .94); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    }
+    .actions .btn--primary { flex: 1; min-height: 56px; font-size: 16px; }
+    .actions .btn--ghost { flex: none; width: 56px; min-height: 56px; padding: 0; }
+    .actions__txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  }
+</style>
+<link rel="icon" type="image/png" href="logo-mark.png">
+<link rel="apple-touch-icon" href="logo-mark.png">
+</head>
+<body>
+  <header class="wrap top">
+    <span class="logo">
+      <img class="logo-img" src="logo.png" width="130" height="40" alt="Никамед"><span>Цифровые визитки</span>
+    </span>
+    <span class="top__eco"><i data-lucide="phone" class="i i-sm" aria-hidden="true"></i><span>Оптовые продажи: +7 (495) 609-63-33</span></span>
+  </header>
+
+  <main class="wrap hero">
+    <section class="intro" aria-labelledby="title">
+      <span class="eyebrow"><i data-lucide="handshake" class="i i-sm" aria-hidden="true"></i>Для партнёров и клиентов</span>
+      <h1 id="title">Цифровая визитка сотрудника <em>НИКАМЕД</em></h1>
+      <p class="pitch">Один QR-код или NFC-метка вместо пачки бумажных визиток. Партнёр или клиент сохраняет контакт в один тап, смотрит каталог ортопедических изделий и компрессионного трикотажа и записывается на встречу. А компания считает, сколько бумаги сэкономила.</p>
+      <ul class="stats" id="stats"></ul>
+
+      <div class="panel picker">
+        <div class="picker__label" id="people-label">Сотрудник <small id="picked"></small></div>
+        <div class="people" id="people" role="group" aria-labelledby="people-label"></div>
+        <div class="actions">
+          <a class="btn btn--primary" id="open" target="_blank" rel="noopener"><i data-lucide="external-link" class="i i-sm" aria-hidden="true"></i>Открыть визитку<span class="sr-only"> (в новой вкладке)</span></a>
+          <a class="btn btn--ghost" href="admin.html"><i data-lucide="layout-dashboard" class="i i-sm" aria-hidden="true"></i><span class="actions__txt">Панель администратора</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="stage" aria-label="Предпросмотр на телефоне">
+      <div class="stage__inner">
+        <div class="scan" id="scan" hidden>
+          <div class="scan__code" id="scan-code"></div>
+          <span>Откройте у&nbsp;себя</span>
+        </div>
+        <div class="phone-slot">
+          <div class="phone">
+            <div class="screen is-loading" id="screen">
+              <div class="island" aria-hidden="true"></div>
+              <div class="statusbar" aria-hidden="true">
+                <span id="clock">9:41</span>
+                <span class="statusbar__icons">
+                  <svg width="18" height="12" viewBox="0 0 18 12" fill="#111"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12" fill="#111"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3A10.4 10.4 0 0 0 8 .4 10.4 10.4 0 0 0 .8 3.3L2 4.6a8.6 8.6 0 0 1 6-2.4Zm0 3.6c1.3 0 2.5.5 3.4 1.3l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.8l1.3 1.3C5.5 6.3 6.7 5.8 8 5.8Zm0 3.6c.4 0 .7.1 1 .4L8 11.6 7 9.8c.3-.3.6-.4 1-.4Z"/></svg>
+                  <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke="#111" opacity=".4"/><rect x="2" y="2" width="17" height="9" rx="2" fill="#111"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2Z" fill="#111" opacity=".45"/></svg>
+                </span>
+              </div>
+              <iframe id="frame" title="Предпросмотр визитки" allow="clipboard-write; web-share"></iframe>
+              <div class="home-ind" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+        <p class="stage__cap">Живой предпросмотр · 375 × 812</p>
+      </div>
+    </section>
+  </main>
+<script src="data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+(() => {
+  const D = window.NIKAMED;
+  const $ = s => document.querySelector(s);
+  const nf = new Intl.NumberFormat('ru-RU');
+  const people = D.employees.filter(e => e.status === 'active');
+  const frame = $('#frame'), screen = $('#screen'), stage = $('.stage');
+  const q = new URLSearchParams(location.search);
+  let id = people.some(p => p.id === q.get('id')) ? q.get('id') : people[0].id;
+
+  $('#stats').innerHTML = [
+    [D.stats.paperSaved, 'листов бумаги сэкономлено'],
+    [D.stats.activeQr, 'активных QR‑визиток'],
+    [D.stats.contactsSaved, 'контактов сохранено'],
+  ].map(([n, t]) => `<li><b class="num">${nf.format(n)}</b><span>${t}</span></li>`).join('');
+
+  const short = e => e.lastName ? `${e.firstName} ${e.lastName.slice(0, 1)}.` : e.name; // «Анна С.» — в ленте без отчества, полное ФИО в подсказке
+  const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const ini = n => { const w = n.trim().split(/\s+/); return esc(((w[0][0] || '') + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase()); };
+  // Добавленные в админке сотрудники могут быть без фото — тогда инициалы
+  $('#people').innerHTML = people.map(e => `<button type="button" class="person" data-id="${esc(e.id)}" aria-pressed="false">` +
+    `<span class="person__ava">${e.photo
+      ? `<img class="avatar" src="${esc(e.photo.replace('w=640&h=640', 'w=96&h=96'))}" alt="" width="34" height="34" data-ini="${ini(e.name)}">`
+      : `<span class="person__ini" aria-hidden="true">${ini(e.name)}</span>`}` +
+    `</span>${esc(short(e))}` +
+    `<span class="sr-only"> — ${esc(e.name)}, ${esc(e.role)}</span></button>`).join('');
+
+  document.addEventListener('error', ev => { // фото не загрузилось — инициалы
+    const img = ev.target;
+    if (!img.dataset || !img.dataset.ini) return;
+    const s = Object.assign(document.createElement('span'), { className: 'person__ini', textContent: img.dataset.ini });
+    s.setAttribute('aria-hidden', 'true'); img.replaceWith(s);
+  }, true);
+
+  const url = embed => {
+    const p = new URLSearchParams({ id });
+    if (embed) p.set('embed', '1');
+    return 'card.html?' + p;
+  };
+  function update() {
+    const e = D.employee(id), s = D.salon(e.salon);
+    document.querySelectorAll('.person').forEach(b => b.setAttribute('aria-pressed', b.dataset.id === id));
+    $('#picked').textContent = `${e.role} · ${s.name}`;
+    $('#open').href = url(false);
+    if (window.qrcode) {
+      const qr = qrcode(0, 'M');
+      qr.addData(new URL(url(false), location.href).href);
+      qr.make();
+      $('#scan-code').innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+      $('#scan-code svg').setAttribute('aria-label', `QR-код визитки: ${e.name}`);
+      $('#scan').hidden = false;
+    }
+    syncFrame();
+  }
+  // Смена сотрудника — новой загрузкой iframe
+  let frameId = null;
+  function syncFrame() {
+    if (!stage.offsetParent) return; // на телефоне превью скрыто — не тратим трафик на iframe
+    const e = D.employee(id);
+    const src = url(true);
+    if (frame.getAttribute('src') === src) return;
+    screen.classList.add('is-loading');
+    frameId = id;
+    frame.title = `Предпросмотр визитки: ${e.name}`;
+    frame.src = src;
+  }
+  frame.addEventListener('load', () => { screen.classList.remove('is-loading'); });
+  $('#people').addEventListener('click', e => {
+    const b = e.target.closest('.person');
+    if (b) { id = b.dataset.id; update(); }
+  });
+
+  // Телефон масштабируется под высоту окна
+  function fit() {
+    if (!stage.offsetParent) return;
+    // ≥900: колонка превью = высота окна (sticky), вычитаем поля и подпись; уже — по окну
+    const byH = (innerWidth >= 900 ? stage.clientHeight - 104 : innerHeight - 110) / 836;
+    const byW = (stage.clientWidth - 32) / 399;
+    document.documentElement.style.setProperty('--s', Math.max(.5, Math.min(1, byH, byW)).toFixed(3));
+  }
+  addEventListener('resize', () => { fit(); syncFrame(); });
+  fit();
+
+  const clock = () => { $('#clock').textContent = new Date().toLocaleTimeString('ru-RU', { hour: 'numeric', minute: '2-digit' }); };
+  clock();
+  setInterval(clock, 20000);
+  update();
+})();
+</script>
+<script src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
+<script>window.lucide && lucide.createIcons();</script>
+</body>
+</html>

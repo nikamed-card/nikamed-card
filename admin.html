@@ -1,0 +1,2224 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>НИКАМЕД · Панель администратора</title>
+<meta name="description" content="Корпоративное управление цифровыми визитками сотрудников ООО «НИКАМЕД»">
+<link rel="stylesheet" href="brand.css">
+<style>
+  :root { --side-w: 296px; --top-h: 64px; --gap: 20px; }
+  [hidden] { display: none !important; }
+  body { background: var(--surface); }
+  .skip { position: absolute; left: 12px; top: -60px; z-index: 100; background: var(--ink); color: #fff; padding: 12px 16px; border-radius: var(--radius); }
+  .skip:focus { top: 12px; }
+
+  /* ---------- Каркас ---------- */
+  .app { display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100vh; }
+  .side {
+    position: sticky; top: 0; height: 100vh; overflow-y: auto; z-index: 40;
+    display: flex; flex-direction: column; gap: 20px;
+    padding: 0 12px 16px; background: var(--white); border-right: 1px solid var(--line);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; height: var(--top-h); padding: 0 8px; flex: none; text-decoration: none; }
+  .logo-img { height: 36px; width: auto; }
+  .logo small { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--ink-3); letter-spacing: .02em; }
+  .nav-label { padding: 0 12px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+  .nav { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .nav a {
+    position: relative; display: flex; align-items: center; gap: 11px; min-height: 44px; padding: 10px 12px;
+    border-radius: var(--radius); color: var(--ink-2); text-decoration: none;
+    font-size: 14px; font-weight: 550; line-height: 1.25;
+    transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+  }
+  .nav a:hover { background: var(--surface); color: var(--ink); }
+  .nav a[aria-current="page"] { background: var(--accent-soft); color: var(--ink); font-weight: 650; }
+  .nav a[aria-current="page"] .i { color: var(--accent-ink); }
+  .nav a[data-route="esg"] { --accent: var(--eco); --accent-soft: var(--eco-soft); --accent-ink: var(--eco); } /* ESG живёт в графитовом */
+  .nav a[aria-current="page"]::before {
+    content: ''; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 4px;
+    border-radius: 0 4px 4px 0; background: var(--accent);
+  }
+  .nav .count { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--ink-3); }
+  .gt {
+    margin-top: auto; display: grid; gap: 8px; padding: 14px; text-decoration: none;
+    border-radius: var(--radius); background: var(--eco-soft); border: 1px solid var(--line);
+    transition: border-color var(--dur-1) var(--ease);
+  }
+  .gt:hover { border-color: var(--eco); }
+  .gt-top { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .gt-ico { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--eco); color: #fff; }
+  .gt-pct { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--eco); }
+  .gt-num { font-size: 13px; color: var(--ink-2); }
+  .gt-num b { font-size: 18px; color: var(--ink); letter-spacing: -.01em; }
+  .gt-bar { height: 6px; border-radius: 3px; background: #fff; overflow: hidden; }
+  .gt-bar span { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--eco); transition: width 1.2s var(--ease); }
+  .gt-cap { font-size: 12px; color: var(--ink-2); line-height: 1.35; text-wrap: balance; }
+
+  .main-col { min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    position: sticky; top: 0; z-index: 30; height: var(--top-h); flex: none;
+    display: flex; align-items: center; gap: 8px; padding: 0 24px 0 32px;
+    background: rgba(255, 255, 255, .94); backdrop-filter: saturate(1.4) blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  main { padding: 28px 32px 56px; width: 100%; max-width: 1480px; }
+  main:focus { outline: none; }
+  main p { text-wrap: pretty; }
+
+  .icon-btn {
+    position: relative; display: inline-grid; place-items: center; width: 44px; height: 44px; flex: none;
+    border: 0; border-radius: var(--radius); background: transparent; color: var(--ink-2); cursor: pointer;
+    transition: background-color var(--dur-1) var(--ease);
+  }
+  .icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+  .menu-btn { display: none; }
+  .search { position: relative; flex: 1; max-width: 560px; }
+  .search-ico { position: absolute; left: 14px; top: 50%; translate: 0 -50%; color: var(--ink-3); pointer-events: none; }
+  .search input {
+    width: 100%; height: 44px; padding: 0 44px 0 40px; border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--surface); font-size: 14px; transition: background-color var(--dur-1), border-color var(--dur-1);
+  }
+  .search input::placeholder { color: var(--ink-3); }
+  .search input:hover { border-color: var(--line-strong); }
+  .search input:focus { background: var(--white); border-color: var(--ink-3); outline: none; }
+  .search input:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
+  .search input::-webkit-search-cancel-button { cursor: pointer; }
+  .kbd {
+    position: absolute; right: 10px; top: 50%; translate: 0 -50%; min-width: 24px; height: 24px; display: grid; place-items: center;
+    font: 600 12px/1 var(--font); color: var(--ink-2); background: var(--white); border: 1px solid var(--line-strong); border-radius: 6px;
+  }
+  .search input:focus ~ .kbd, .search input:not(:placeholder-shown) ~ .kbd { opacity: 0; }
+  .q-pop {
+    position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 50; background: var(--white);
+    border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 6px; max-height: 70vh; overflow: auto;
+  }
+  .q-list { list-style: none; margin: 0; padding: 0; }
+  .q-list li { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+  .q-list li[aria-selected="true"], .q-list li:hover { background: var(--accent-soft); }
+  .q-list .q-t { min-width: 0; flex: 1; }
+  .q-list b { display: block; font-size: 14px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .q-list small { display: block; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .q-list mark { background: none; color: var(--accent-ink); font-weight: 800; }
+  .q-list .ava { width: 36px; height: 36px; }
+  .q-list .q-ic { width: 36px; height: 36px; border-radius: var(--radius); display: grid; place-items: center; background: var(--surface-2); color: var(--ink-2); flex: none; }
+  .q-list .q-go { color: var(--ink-3); }
+  .q-sec { padding: 8px 10px 4px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); cursor: default !important; min-height: 0 !important; background: none !important; }
+  .q-foot { padding: 8px 10px 4px; font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); margin-top: 6px; }
+  .q-foot:empty { display: none; }
+
+  .top-actions { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .bell-badge {
+    position: absolute; top: 6px; right: 5px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+    background: var(--accent); color: var(--on-accent); border: 2px solid var(--white);
+    font-size: 10px; font-weight: 800; line-height: 14px; text-align: center;
+  }
+  .bell-badge:empty { display: none; }
+  .me {
+    display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 8px 4px 4px; border: 0; background: none;
+    border-radius: var(--radius); cursor: pointer; text-align: left;
+  }
+  .me:hover { background: var(--surface-2); }
+  .me .avatar { width: 36px; height: 36px; }
+  .me-text { display: grid; line-height: 1.2; }
+  .me-text b { font-size: 14px; font-weight: 650; }
+  .me-text small { font-size: 12px; color: var(--ink-3); }
+  .me .i { color: var(--ink-3); }
+
+  [popover].pop {
+    position: fixed; inset: auto; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--white); color: var(--ink); box-shadow: var(--shadow-lg);
+  }
+  [popover].pop { width: var(--w); right: min(var(--r, 12px), calc(100vw - var(--w) - 12px)); } /* не вылезает за левый край */
+  .pop-notif { --w: min(380px, calc(100vw - 24px)); }
+  .pop-me { --w: 280px; padding: 8px; }
+  .pop-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px 10px; border-bottom: 1px solid var(--line); }
+  .pop-head h2 { font-size: 15px; }
+  .link-btn { border: 0; background: none; padding: 8px 4px; min-height: 36px; font-size: 13px; font-weight: 650; color: var(--accent-ink); cursor: pointer; border-radius: 6px; }
+  a.link-btn { text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+  .link-btn:hover { text-decoration: underline; }
+  .link-btn:disabled { color: var(--ink-3); text-decoration: none; cursor: default; }
+  .notif-list { list-style: none; margin: 0; padding: 6px; max-height: 420px; overflow: auto; }
+  .notif-list { display: grid; gap: 2px; }
+  .notif-list li { position: relative; }
+  .notif-list .n-item { display: flex; gap: 12px; padding: 12px 12px 12px 10px; border-radius: 8px; text-decoration: none; }
+  .notif-list .n-item:hover { background: var(--surface); }
+  .notif-list .n-ic { display: grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: var(--radius); background: var(--accent-soft); color: var(--accent-ink); }
+  .notif-list .n-ic.eco { background: var(--eco-soft); color: var(--eco); }
+  .notif-list p { font-size: 14px; line-height: 1.4; }
+  .notif-list time { display: block; font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+  .notif-list .dot { position: absolute; right: 12px; top: 16px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .notif-list li.unread p { font-weight: 600; padding-right: 14px; }
+  .me-card { display: flex; gap: 12px; align-items: center; padding: 8px 8px 12px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+  .me-card b { display: block; font-size: 14px; }
+  .me-card small { font-size: 12px; color: var(--ink-3); }
+  .menu { display: grid; }
+  .menu a, .menu button {
+    display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; border: 0; background: none; width: 100%;
+    border-radius: 8px; font-size: 14px; font-weight: 550; text-decoration: none; cursor: pointer; text-align: left; color: var(--ink);
+  }
+  .menu a:hover, .menu button:hover { background: var(--surface); }
+  .menu .i { color: var(--ink-3); }
+  .menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px 0; }
+  .sw { margin-left: auto; width: 34px; height: 20px; border-radius: 10px; background: var(--line-strong); position: relative; transition: background-color var(--dur-2); flex: none; }
+  .sw::after { content: ''; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); transition: translate var(--dur-2) var(--ease); }
+  [aria-checked="true"] .sw { background: var(--accent); }
+  [aria-checked="true"] .sw::after { translate: 14px 0; }
+
+  /* ---------- Общие блоки ---------- */
+  .view[hidden] { display: none !important; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; margin-bottom: 24px; }
+  .page-head h1 { font-size: 30px; letter-spacing: -.025em; }
+  .page-head h1:focus { outline: none; }
+  .page-head p { margin-top: 6px; color: var(--ink-2); font-size: 14px; }
+  .page-head .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 18px 20px 0; }
+  .card-head h2 { font-size: 17px; letter-spacing: -.015em; }
+  .card-head .sub { font-size: 13px; color: var(--ink-3); margin-top: 3px; }
+  .card-body { padding: 16px 20px 20px; }
+  .muted { color: var(--ink-3); }
+  .grid-2 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--gap); }
+  .stack { display: grid; gap: var(--gap); }
+  .seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface-2); border-radius: var(--radius); }
+  .seg button {
+    min-height: 38px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--ink-2); display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  .seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--white); color: var(--ink); box-shadow: var(--shadow-sm); }
+  .seg .n { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .field { display: grid; gap: 6px; align-content: start; }
+  .card, .tbl-card, .sheets { scroll-margin-top: calc(var(--top-h) + 16px); }
+  .field > span { font-size: 13px; font-weight: 600; }
+  .input, .select {
+    width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius);
+    background: var(--white); font-size: 14px;
+  }
+  .select { appearance: none; padding-right: 36px; cursor: pointer;
+    background: var(--white) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23454545' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 12px center; }
+  .input:focus-visible, .select:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 0; border-color: transparent; }
+  .field .err { font-size: 13px; color: var(--danger); display: none; }
+  .field.invalid .input, .field.invalid .select { border-color: var(--danger); }
+  .field.invalid .err { display: block; }
+  .ava { width: 40px; height: 40px; max-width: none; border-radius: 50%; flex: none; object-fit: cover; background: var(--surface-2); display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+  .delta { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--success); }
+  /* ---------- KPI: яркие акцентные рамки ---------- */
+  .kpis { list-style: none; margin: 0 0 var(--gap); padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
+  .kpi {
+    --k: var(--accent); --k-soft: var(--accent-soft); --k-ink: var(--accent-ink);
+    position: relative; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; min-height: 176px;
+    padding: 18px 20px 18px; background: var(--white); border: 2px solid var(--k); border-radius: var(--radius);
+  }
+  .kpi--eco { --k: var(--eco); --k-soft: var(--eco-soft); --k-ink: var(--eco); }
+  /* тёмная hero-карточка: единственный «горячий» график первого экрана */
+  .kpi--ink { --k: var(--ink); --k-soft: #2D3748; --k-ink: var(--white); --spark-bg: var(--ink); background: var(--ink); color: var(--white); }
+  .kpi--ink .kpi-top { color: #CBD5E0; }
+  .kpi--ink .kpi-val span, .kpi--ink .kpi-note { color: #A0AEC0; }
+  .kpi--ink .delta { color: #7BD3A2; }
+  .kpi-top { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 650; color: var(--ink-2); line-height: 1.25; text-wrap: balance; }
+  .kpi-ic { display: grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: var(--radius); background: var(--k-soft); color: var(--k-ink); }
+  .kpi-val { align-self: end; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .kpi-val b { font-size: 38px; font-weight: 800; letter-spacing: -.035em; line-height: 1; }
+  .kpi-val span { font-size: 15px; font-weight: 600; color: var(--ink-2); }
+  .kpi-foot { display: flex; align-items: center; align-content: flex-end; gap: 8px; flex-wrap: wrap; min-height: 40px; font-size: 13px; }
+  .kpi-note { color: var(--ink-3); text-wrap: balance; }
+  .kpi-bar { flex: 1 1 100%; height: 6px; border-radius: 3px; background: var(--eco-soft); overflow: hidden; }
+  .kpi-bar span { display: block; height: 100%; width: 0; background: var(--eco); border-radius: 3px; transition: width 1.2s var(--ease); }
+  .kpi-spark { margin-left: auto; line-height: 0; }
+  .kpi { container-type: inline-size; }
+  @container (max-width: 250px) { /* 1280: четыре узкие карточки — число и спарклайн в одну строку */
+    .kpi-val b { font-size: 30px; }
+    .kpi-spark svg { width: 72px; height: auto; }
+  }
+
+  /* ---------- Таблица ---------- */
+  .tbl-card { margin-bottom: var(--gap); }
+  .tbl-card .card-head { padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .q-chip { display: flex; align-items: center; gap: 8px; padding: 10px 20px; font-size: 14px; color: var(--ink-2); background: var(--accent-soft); border-bottom: 1px solid var(--line); }
+  .q-chip b { color: var(--ink); }
+  .q-chip .link-btn { margin-left: auto; }
+  .tbl-wrap { overflow-x: auto; position: relative; } /* relative: .sr-only в шапке не вылезает за пределы прокрутки */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .tbl th { text-align: left; font-size: 12px; font-weight: 650; color: var(--ink-3); padding: 0 12px; height: 44px; white-space: nowrap; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .tbl th button { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 6px; margin-left: -6px; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-radius: 6px; }
+  .tbl th button:hover { color: var(--ink); background: var(--surface-2); }
+  .tbl th button .i { opacity: 0; transition: rotate var(--dur-2) var(--ease), opacity var(--dur-1); }
+  .tbl th button:hover .i { opacity: .5; }
+  .tbl th[aria-sort] button { color: var(--ink); }
+  .tbl th .th-ic { display: none; opacity: 1 !important; color: var(--ink-2) !important; rotate: none !important; }
+  .tbl th[aria-sort] button .i { opacity: 1; color: var(--accent-ink); }
+  .tbl th[aria-sort="ascending"] button .i { rotate: 180deg; }
+  .tbl td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .tbl tbody tr { cursor: pointer; transition: background-color var(--dur-1) var(--ease); }
+  .tbl tbody tr:hover { background: #FDF5F6; }
+  .tbl tbody tr:hover .c-go .i { color: var(--accent-ink); translate: 2px 0; }
+  .tbl tbody tr:last-child td { border-bottom: 0; }
+  .tbl .c-photo { width: 64px; padding-left: 20px; padding-right: 0; }
+  .tbl .c-go { width: 48px; padding-right: 16px; text-align: right; }
+  .tbl .c-go .i { color: var(--ink-3); transition: translate var(--dur-1) var(--ease); }
+  .tbl .nm { border: 0; background: none; padding: 4px 0; font: inherit; font-weight: 650; color: var(--ink); cursor: pointer; text-align: left; line-height: 1.3; white-space: nowrap; }
+  .tbl .c-salon, .tbl .c-scans, .tbl .c-status { width: 1%; white-space: nowrap; } /* сжаты по содержимому, остаток — имени и должности */
+  .tbl .nm:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .tbl .role { color: var(--ink-2); line-height: 1.35; max-width: 260px; }
+  .tbl .meta { display: none; font-size: 12px; color: var(--ink-3); line-height: 1.35; margin-top: 2px; }
+  .tbl .sal b { display: block; font-weight: 600; white-space: nowrap; }
+  .tbl .sal small { font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 4px; }
+  .tbl .sc { display: flex; align-items: center; gap: 12px; }
+  .tbl .sc .num { min-width: 44px; font-weight: 650; text-align: right; }
+  .tbl .sc .spark { flex: none; }
+  .tbl .nodata { font-size: 12px; width: 72px; }
+  .tbl mark { background: #FBD5DA; color: inherit; border-radius: 3px; padding: 0 1px; }
+  .tbl tr.row-flash { animation: flash 1.2s var(--ease); }
+  @keyframes flash { from { background: var(--accent-soft); } }
+  .empty { display: grid; justify-items: center; gap: 8px; padding: 48px 20px 52px; text-align: center; }
+  .empty-ic { display: grid; place-items: center; width: 56px; height: 56px; border-radius: var(--radius); background: var(--surface-2); color: var(--ink-3); margin-bottom: 4px; }
+  .empty b { font-size: 16px; }
+  .empty p { color: var(--ink-2); font-size: 14px; max-width: 360px; margin-bottom: 8px; }
+
+  /* ---------- Графики ---------- */
+  .dash-charts { align-items: stretch; }
+  .chart-box { min-height: 120px; line-height: 0; }
+  .chart { display: block; max-width: 100%; height: auto; overflow: visible; }
+  .chart:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 4px; border-radius: 6px; }
+  .chart .gl { stroke: var(--line); stroke-width: 1; }
+  .chart .ax { font-size: 11px; fill: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .chart .ax-val { font-size: 12px; font-weight: 700; fill: var(--ink); font-variant-numeric: tabular-nums; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+  .chart .xh line { stroke: var(--ink); stroke-width: 1; }
+  .chart .col .bar { transition: opacity var(--dur-1); }
+  .chart .col.on .bar { opacity: .75; }
+  .chart .hit { cursor: crosshair; }
+  .tip {
+    position: fixed; z-index: 200; pointer-events: none; max-width: 260px; padding: 10px 12px; line-height: 1.35;
+    background: var(--ink); color: #fff; border-radius: 8px; font-size: 13px; box-shadow: var(--shadow);
+  }
+  .tip b { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .tip span { color: #CBD5E0; }
+  .tip small { display: block; color: #CBD5E0; font-size: 12px; margin-top: 2px; }
+  .hbars { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .hbars li { display: grid; grid-template-columns: minmax(0, 150px) minmax(0, 1fr) auto; align-items: center; gap: 12px; font-size: 14px; }
+  .hb-l { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 600; }
+  .hb-l .i { color: var(--ink-3); }
+  .hb-l > span { min-width: 0; line-height: 1.25; }
+  .hb-l small { display: block; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+  .hb-track { height: 10px; border-radius: 4px; background: var(--surface-2); }
+  .hb-bar { display: block; height: 100%; border-radius: 0 4px 4px 0; min-width: 4px; }
+  .hb-v { font-weight: 700; min-width: 48px; text-align: right; }
+  .ch-total { display: flex; align-items: baseline; gap: 8px; margin-bottom: 18px; }
+  .ch-total b { font-size: 28px; font-weight: 800; letter-spacing: -.03em; }
+  .ch-total span { font-size: 13px; color: var(--ink-3); }
+  .ch-stack { display: flex; gap: 2px; height: 12px; margin-bottom: 18px; }
+  .ch-stack span { border-radius: 3px; }
+  .ch-legend { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 12px; }
+  .ch-legend li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 44px; align-items: center; gap: 10px; font-size: 14px; }
+  .ch-legend li > i { width: 10px; height: 10px; border-radius: 3px; }
+  .ch-legend .ch-name { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+  .ch-legend b { text-align: right; }
+  .nowrap { white-space: nowrap; }
+  .btn:disabled { opacity: .38; cursor: not-allowed; box-shadow: none; transform: none; }
+  .btn--dark:disabled:hover { background: var(--ink); }
+  .ch-note { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); display: flex; gap: 8px; line-height: 1.45; }
+  .ch-note .i { color: var(--accent-ink); flex: none; margin-top: 1px; }
+
+  .toast-wrap { position: fixed; right: 24px; bottom: 24px; z-index: 300; display: grid; gap: 8px; }
+  .toast { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: var(--radius); background: var(--ink); color: #fff; font-size: 14px; font-weight: 550; box-shadow: var(--shadow-lg); animation: tin var(--dur-2) var(--ease); max-width: 420px; }
+  .toast .i { color: #7BD3A2; }
+  .toast.out { opacity: 0; translate: 0 8px; transition: opacity var(--dur-2), translate var(--dur-2); }
+  @keyframes tin { from { opacity: 0; translate: 0 10px; } }
+  /* ---------- Drawer (нативный <dialog>) ---------- */
+  dialog.drawer {
+    position: fixed; inset: 0 0 0 auto; margin: 0; padding: 0; width: min(480px, 100vw); max-width: 100vw;
+    height: 100dvh; max-height: 100dvh; border: 0; border-left: 1px solid var(--line); background: var(--white); color: var(--ink);
+    box-shadow: var(--shadow-lg); overscroll-behavior: contain;
+  }
+  dialog.drawer--wide { width: min(800px, 100vw); }
+  dialog.drawer[open] { animation: drin var(--dur-3) var(--ease); }
+  dialog.drawer::backdrop { background: rgba(17, 17, 17, .38); }
+  @keyframes drin { from { translate: 40px 0; opacity: 0; } }
+  .dr-in { display: flex; flex-direction: column; height: 100%; }
+  .dr-head { display: flex; align-items: center; gap: 14px; padding: 16px 16px 16px 24px; border-bottom: 1px solid var(--line); flex: none; }
+  .dr-head .dr-t { flex: 1; min-width: 0; }
+  .dr-head h2 { font-size: 20px; }
+  .dr-head p { font-size: 13px; color: var(--ink-2); margin-top: 4px; line-height: 1.4; }
+  .dr-head .ava { width: 52px; height: 52px; font-size: 16px; }
+  .dr-ic { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--radius); background: var(--accent-soft); color: var(--accent-ink); flex: none; }
+  .dr-body { flex: 1; overflow: auto; padding: 24px; }
+  .dr-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px; border-top: 1px solid var(--line); flex: none; }
+
+  .emp-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; background: var(--surface); }
+  .preview { margin: 0; position: sticky; top: 0; display: grid; justify-items: center; gap: 12px; }
+  .preview figcaption { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); text-align: center; flex-wrap: wrap; justify-content: center; }
+  .phone { position: relative; width: 284px; height: 584px; padding: 10px; border-radius: 42px; background: #1A202C; box-shadow: var(--shadow-lg), inset 0 0 0 2px #2D3748; }
+  .island { position: absolute; z-index: 2; top: 17px; left: 50%; translate: -50% 0; width: 76px; height: 20px; border-radius: 10px; background: #1A202C; }
+  .phone-screen { position: relative; width: 264px; height: 564px; border-radius: 32px; overflow: hidden; background: var(--white); }
+  .sbar { display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 22px 0 26px; font-size: 11px; font-weight: 700; color: var(--ink); }
+  .sbar span { display: flex; gap: 3px; align-items: center; }
+  .sbar i { display: block; width: 3px; border-radius: 1px; background: var(--ink); }
+  .phone iframe { position: relative; display: block; width: 390px; height: 789px; border: 0; transform: scale(.6769); transform-origin: 0 0; background: transparent; }
+  .phone-ph { position: absolute; inset: 30px 0 0; display: grid; align-content: start; gap: 12px; padding: 40px 20px; }
+  .phone-ph span { height: 14px; border-radius: 7px; background: var(--surface-2); }
+  .phone-ph span:first-child { width: 88px; height: 88px; border-radius: 50%; justify-self: center; margin-bottom: 8px; }
+  .phone-ph span:nth-child(3) { width: 60%; justify-self: center; }
+  .emp-info { display: grid; gap: 16px; min-width: 0; }
+  .mstats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mstat { padding: 14px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 4px; }
+  .mstat span { font-size: 12px; color: var(--ink-3); font-weight: 600; }
+  .mstat b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+  .mstat small { font-size: 12px; color: var(--ink-2); }
+  .mstat .spark { margin-top: 4px; }
+  .info-box { padding: 14px 16px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 10px; font-size: 14px; }
+  .info-box h3 { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .info-row { display: flex; gap: 10px; align-items: flex-start; line-height: 1.4; }
+  .info-row .i { color: var(--ink-3); margin-top: 1px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .emp-actions { display: grid; gap: 8px; }
+  .emp-actions .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+  .emp-actions .btn { padding: 0 12px; white-space: nowrap; font-size: 14px; }
+
+  .form-body { display: grid; gap: 18px; align-content: start; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-err { padding: 12px 14px; border-radius: var(--radius); background: var(--danger-soft); color: var(--danger); font-size: 14px; font-weight: 600; }
+  .field em { font-style: normal; }
+  #form-dlg { width: min(560px, 100vw); }
+  .form-body { gap: 26px; }
+  .fs { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 14px; }
+  .fs-h { padding: 0; margin-bottom: 2px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .fs-h small { text-transform: none; letter-spacing: 0; font-weight: 500; margin-left: 4px; }
+  .form-row--wide { grid-template-columns: minmax(0, 1fr) 120px; }
+  .form-row.form-row--fio { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .fio-prev { margin-top: -6px; }
+  .lbl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 600; }
+  .lbl-row .link-btn { padding: 0 2px; min-height: 0; font-size: 12.5px; }
+  .fio-prev b { color: var(--ink); font-weight: 650; }
+  .hint { font-size: 12.5px; color: var(--ink-3); line-height: 1.4; }
+  .field small.muted { font-weight: 500; }
+  /* Фото */
+  .ph-row { display: flex; align-items: center; gap: 18px; padding: 14px; border: 1px dashed var(--line-strong); border-radius: var(--radius); transition: border-color var(--dur-1), background-color var(--dur-1); }
+  .ph-row.drag { border-color: var(--accent); background: var(--accent-soft); }
+  .ph-pic { width: 88px; height: 88px; flex: none; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-2); font-size: 26px; font-weight: 750; letter-spacing: -.02em; box-shadow: 0 0 0 3px var(--white), 0 0 0 5px var(--accent); }
+  .ph-pic img { width: 100%; height: 100%; object-fit: cover; }
+  .ph-pic .i { width: 28px; height: 28px; color: var(--ink-3); }
+  .ph-ctl { display: grid; gap: 8px; min-width: 0; }
+  .ph-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ph-btns .btn { min-height: 40px; padding: 0 14px; font-size: 14px; }
+  .ph-up:has(input:focus-visible) { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+  .ph-up.busy { opacity: .6; pointer-events: none; }
+  /* Теги */
+  .tag-box { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 44px; padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--white); cursor: text; }
+  .tag-box:focus-within { outline: 2px solid var(--accent-ink); border-color: transparent; }
+  .tag-list { display: contents; list-style: none; }
+  .tag-list li { display: inline-flex; align-items: center; gap: 2px; height: 30px; padding: 0 2px 0 10px; border-radius: var(--radius-pill); background: var(--surface-2); font-size: 13px; font-weight: 600; }
+  .tag-list button { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 4px; background: none; color: var(--ink-3); cursor: pointer; }
+  .tag-list button:hover { background: var(--line); color: var(--ink); }
+  .tag-input { flex: 1 1 160px; min-width: 120px; height: 30px; border: 0; padding: 0 4px; font-size: 14px; background: none; }
+  .tag-input:focus { outline: none; }
+  .tag-box.full .tag-input { display: none; }
+  /* Публикация */
+  .pub { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pub-opt { position: relative; cursor: pointer; }
+  .pub-opt input { position: absolute; opacity: 0; }
+  .pub-opt span { display: grid; gap: 4px; height: 100%; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: var(--radius); }
+  .pub-opt b { font-size: 14px; }
+  .pub-opt small { font-size: 12.5px; color: var(--ink-2); line-height: 1.4; }
+  .pub-opt input:checked + span { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: var(--surface); }
+  .pub-opt input:focus-visible + span { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+  /* Действия в карточке сотрудника */
+  .emp-manage { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid var(--line); }
+  .emp-manage .btn { min-height: 40px; padding: 0 12px; font-size: 14px; }
+  .btn--danger-ghost { background: var(--white); border-color: var(--line); color: var(--danger); margin-left: auto; }
+  .btn--danger-ghost:hover { background: var(--danger-soft); border-color: var(--danger-soft); }
+  .btn--danger-ghost.armed { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .toast button { margin-left: 6px; border: 0; background: rgba(255,255,255,.14); color: #fff; font: inherit; font-weight: 700; min-height: 32px; padding: 0 10px; border-radius: 6px; cursor: pointer; }
+  .toast button:hover { background: rgba(255,255,255,.24); }
+  @media (max-width: 699px) {
+    .pub { grid-template-columns: minmax(0, 1fr); }
+    .form-row.form-row--wide { grid-template-columns: minmax(0, 1fr) 110px; }
+    .form-row.form-row--fio { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .ph-row { gap: 14px; padding: 12px; }
+    .ph-pic { width: 72px; height: 72px; font-size: 22px; }
+  }
+  /* ---------- Профили ---------- */
+  .filters { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filters .field { width: 260px; max-width: 100%; }
+  .f-count { margin-left: auto; font-size: 14px; color: var(--ink-2); padding-bottom: 12px; }
+  .salon-strip { display: flex; align-items: center; gap: 16px 28px; flex-wrap: wrap; padding: 16px 20px; margin-bottom: 16px; background: var(--white); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: var(--radius); font-size: 14px; }
+  .salon-strip b { font-size: 16px; }
+  .salon-strip .info-row { color: var(--ink-2); }
+  .people { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--gap); }
+  .person {
+    position: relative; display: flex; flex-direction: column; gap: 12px; padding: 18px; background: var(--white);
+    border: 1px solid var(--line); border-radius: var(--radius); transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease);
+  }
+  .person:hover { border-color: var(--line-strong); box-shadow: var(--shadow); }
+  .person:focus-within { border-color: var(--ink-3); }
+  .p-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .p-top .ava { width: 56px; height: 56px; font-size: 17px; }
+  .p-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .badge--eco { background: var(--eco-soft); color: var(--eco); }
+  .p-open { border: 0; background: none; padding: 0; font: inherit; font-size: 16px; font-weight: 700; letter-spacing: -.01em; text-align: left; cursor: pointer; color: var(--ink); line-height: 1.25; }
+  .p-open::after { content: ''; position: absolute; inset: 0; border-radius: var(--radius); }
+  .p-open:focus-visible { outline: none; }
+  .p-open:focus-visible::after { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+  .p-role { font-size: 13px; color: var(--ink-2); line-height: 1.35; margin-top: 3px; }
+  .p-salon { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
+  .p-salon .i { color: var(--ink-3); }
+  .p-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .p-foot { margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .p-foot b { font-size: 20px; font-weight: 800; letter-spacing: -.02em; display: block; line-height: 1.1; }
+  .p-foot small { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+  .person mark, .salon-strip mark { background: #FBD5DA; color: inherit; border-radius: 3px; }
+  .person.row-flash { animation: flash 1.4s var(--ease); }
+  /* ---------- QR-генератор ---------- */
+  .qr-layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 24px; align-items: start; }
+  .qr-opts { position: sticky; top: calc(var(--top-h) + 20px); padding: 20px; display: grid; gap: 22px; max-height: calc(100vh - var(--top-h) - 40px); overflow: auto; overscroll-behavior: contain; }
+  .opt { border: 0; margin: 0; padding: 0; display: grid; gap: 12px; min-width: 0; }
+  .opt-h { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 750; padding: 0; margin-bottom: 2px; }
+  .step { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 12px; font-weight: 800; }
+  .opt-sub { font-size: 13px; font-weight: 600; margin-bottom: -4px; }
+  .pick-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+  .chk { display: flex; align-items: center; gap: 10px; min-height: 40px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .chk input, .pick-list input { width: 18px; height: 18px; accent-color: var(--ink); margin: 0; flex: none; cursor: pointer; }
+  .pick-list { list-style: none; margin: 0; padding: 4px; max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .pick-list label { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+  .pick-list label:hover { background: var(--white); }
+  .pick-list .ava { width: 32px; height: 32px; font-size: 11px; }
+  .pick-list b { display: block; font-size: 14px; font-weight: 600; line-height: 1.25; }
+  .pick-list small { display: block; font-size: 12px; color: var(--ink-3); line-height: 1.3; }
+  .swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .swatches label { position: relative; cursor: pointer; }
+  .swatches input { position: absolute; opacity: 0; }
+  .swatches span { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: var(--radius); font-size: 13px; font-weight: 600; text-align: center; }
+  .swatches i { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+  .swatches input:checked + span { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: var(--surface); }
+  .swatches input:focus-visible + span { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+  .sizes span { flex-direction: column; gap: 0; font-weight: 500; font-size: 12px; color: var(--ink-2); line-height: 1.3; }
+  .sizes b { font-size: 15px; color: var(--ink); }
+  .tgl { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; font-size: 14px; font-weight: 550; }
+  .tgl input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .tgl .sw { margin: 0; }
+  .tgl input:checked + .sw { background: var(--ink); }
+  .tgl input:checked + .sw::after { translate: 14px 0; }
+  .tgl input:focus-visible + .sw { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+  .opt-go { display: grid; gap: 10px; position: sticky; bottom: -20px; z-index: 1; margin: 0 -20px -20px; padding: 16px 20px 20px; background: linear-gradient(rgba(255, 255, 255, 0), var(--white) 20px); }
+  .opt-go p { font-size: 12px; line-height: 1.45; display: flex; gap: 6px; }
+  .qr-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .qr-bar h2 { font-size: 17px; }
+  .qr-bar p { font-size: 13px; margin-top: 2px; }
+  .sheets { display: grid; gap: 24px; justify-items: center; padding: 28px; background: var(--surface-2); border-radius: var(--radius); }
+  .sheet {
+    container-type: inline-size; width: 100%; max-width: 640px; aspect-ratio: 210 / 297; background: #fff; color: #1A202C;
+    box-shadow: var(--shadow); border-radius: 4px;
+  }
+  .sh { height: 100%; padding: 5cqw 6cqw 4cqw; display: flex; flex-direction: column; gap: 2.4cqw; }
+  .sheet--empty { display: flex; flex-direction: column; padding: 32px; align-items: center; justify-content: center; text-align: center; gap: 10px; box-shadow: none; border: 2px dashed var(--line-strong); background: transparent; max-width: 460px; }
+  .sheet--empty b { font-size: 17px; }
+  .sheet--empty p { font-size: 14px; color: var(--ink-2); max-width: 300px; }
+  .sh-head { display: flex; align-items: center; justify-content: space-between; gap: 2cqw; padding-bottom: 2.4cqw; border-bottom: .35cqw solid #1A202C; }
+  .sh-logo { display: flex; align-items: center; }
+  .sh-logo img { height: 6.4cqw; width: auto; }
+  .sh-meta { text-align: right; font-size: 1.7cqw; line-height: 1.35; color: #4A5568; }
+  .sh-meta b { color: #1A202C; font-size: 2cqw; }
+  .sh-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-template-rows: repeat(var(--rows), minmax(0, 1fr)); }
+  .qcard { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 1.4cqw !important; gap: 1cqw; padding: 1.2cqw; text-align: center; border-right: .2cqw dashed #CBD5E0; border-bottom: .2cqw dashed #CBD5E0; min-width: 0; min-height: 0; overflow: hidden; }
+  .qcard.lc { border-right: 0; }
+  .qcard.lr { border-bottom: 0; }
+  .qcard svg.qr { width: var(--qr); height: auto; display: block; flex: none; } /* одинаковый размер кода при длинной подписи */
+  .qcard b { display: block; font-size: var(--fs1); font-weight: 750; line-height: 1.2; letter-spacing: -.01em; } /* block: без 16px-строки родителя, иначе подпись не влезает в мелком превью */
+  .qcard small { font-size: var(--fs2); color: #4A5568; line-height: 1.25; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .qcard .q-dl { position: absolute; top: .6cqw; right: .6cqw; width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink-2); display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity var(--dur-1); }
+  .qcard:hover .q-dl, .q-dl:focus-visible { opacity: 1; }
+  @media (hover: none) { .qcard .q-dl { opacity: .92; width: 30px; height: 30px; top: 2px; right: 2px; } }
+  .sh-grid[data-size="s"] { --qr: 13cqw; --fs1: 1.65cqw; --fs2: 1.3cqw; }
+  .sh-grid[data-size="m"] { --qr: 18cqw; --fs1: 2.1cqw; --fs2: 1.6cqw; }
+  .sh-grid[data-size="l"] { --qr: 24cqw; --fs1: 2.8cqw; --fs2: 2cqw; }
+  .sh-foot { display: flex; justify-content: space-between; gap: 2cqw; font-size: 1.6cqw; color: #4A5568; padding-top: 2cqw; border-top: .2cqw solid #E2E8F0; }
+  .sh-foot b { color: var(--accent); }
+
+  @media print {
+    @page { size: A4; margin: 0; }
+    body { background: #fff; }
+    .side, .topbar, .page-head, .qr-opts, .qr-bar, .toast-wrap, .skip, .q-dl, .tip, .scrim { display: none !important; }
+    .app, .qr-layout { display: block; }
+    main { padding: 0; max-width: none; }
+    .sheets { display: block; padding: 0; background: none; }
+    .sheet { width: 210mm; max-width: none; height: 297mm; aspect-ratio: auto; box-shadow: none; border-radius: 0; break-after: page; margin: 0; }
+    .sheet:last-child { break-after: auto; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+  /* ---------- Аналитика ---------- */
+  .a-stats { list-style: none; margin: 0 0 var(--gap); padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
+  .a-stats li { padding: 16px 18px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 4px; align-content: start; }
+  .a-stats span { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  .a-stats b { font-size: 28px; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; }
+  .a-stats small { font-size: 13px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .heat-card, .an-bottom { margin-top: var(--gap); }
+  .an-bottom { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #an-salons .hbars li { grid-template-columns: minmax(0, 220px) minmax(0, 1fr) auto; }
+  .data-table { margin-top: 12px; font-size: 14px; }
+  .data-table summary { cursor: pointer; font-weight: 600; color: var(--accent-ink); min-height: 36px; display: inline-flex; align-items: center; border-radius: 6px; }
+  .dt-wrap { max-height: 260px; overflow: auto; margin-top: 8px; border: 1px solid var(--line); border-radius: var(--radius); }
+  .data-table table { width: 100%; border-collapse: collapse; }
+  .data-table th, .data-table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  .data-table th { position: sticky; top: 0; background: var(--surface); font-size: 12px; color: var(--ink-3); }
+  .data-table td:last-child, .data-table th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .heat { display: grid; grid-template-columns: 32px repeat(24, minmax(0, 1fr)); gap: 2px; font-size: 11px; color: var(--ink-3); border-radius: 6px; }
+  .heat:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 6px; }
+  .heat .hc { aspect-ratio: 1.35; min-height: 18px; border-radius: 3px; transition: box-shadow var(--dur-1); }
+  .heat .hc.on { box-shadow: 0 0 0 2px var(--ink); position: relative; z-index: 1; }
+  .heat .hd { display: flex; align-items: center; font-weight: 600; color: var(--ink-2); font-size: 12px; }
+  .heat .hh { text-align: center; padding-top: 4px; font-variant-numeric: tabular-nums; }
+  .heat-legend { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); flex-wrap: wrap; }
+  .heat-legend ol { list-style: none; margin: 0; padding: 0; display: flex; gap: 2px; }
+  .heat-legend li { display: grid; gap: 3px; justify-items: center; font-variant-numeric: tabular-nums; }
+  .heat-legend li i { width: 36px; height: 12px; border-radius: 3px; display: block; }
+  .leader { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .leader li { display: grid; grid-template-columns: 28px 36px minmax(0, 1fr) minmax(48px, 26%) 52px; align-items: center; gap: 10px; min-height: 52px; padding: 4px 8px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .leader li:hover { background: var(--surface); }
+  .leader .rk { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 800; background: var(--surface-2); color: var(--ink-2); }
+  .leader li:nth-child(-n+3) .rk { background: var(--ink); color: var(--white); }
+  .leader li:first-child .rk { background: var(--accent); color: var(--on-accent); }
+  /* акцент — только у лидера, остальные полосы нейтральные */
+  .hbars li:not(:first-child) .hb-track > *, .leader li:not(:first-child) .hb-track > * { background: #718096; }
+  .leader .ava { width: 36px; height: 36px; font-size: 12px; }
+  .leader .ln { min-width: 0; }
+  .leader .ln button { border: 0; background: none; padding: 0; font: inherit; font-weight: 650; cursor: pointer; text-align: left; color: var(--ink); display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .leader .ln small { display: block; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .leader .hb-track { height: 8px; }
+  .leader .v { text-align: right; font-weight: 700; }
+  /* ---------- ESG (графитовый акцент) ---------- */
+  .eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--eco); margin-bottom: 8px; letter-spacing: .01em; }
+  .esg-hero {
+    position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 32px;
+    padding: 36px 40px; margin-bottom: var(--gap); border-radius: var(--radius); background: var(--eco); color: #fff;
+  }
+  .esg-hero::after { /* силуэт листа: декоративный */
+    content: ''; position: absolute; right: -60px; bottom: -120px; width: 420px; height: 420px; border-radius: 0 60% 0 60%;
+    background: rgba(255, 255, 255, .05); rotate: 18deg; pointer-events: none;
+  }
+  .esg-hero > * { position: relative; z-index: 1; }
+  .esg-big { display: grid; gap: 6px; font-weight: 800; }
+  .esg-big b { font-size: clamp(56px, 7vw, 96px); line-height: .95; letter-spacing: -.045em; }
+  .esg-big span { font-size: clamp(20px, 2.2vw, 28px); letter-spacing: -.02em; }
+  .esg-lead { margin-top: 14px; font-size: 16px; color: #E2E8F0; max-width: 560px; line-height: 1.5; }
+  .esg-goal { margin-top: 26px; max-width: 520px; display: grid; gap: 8px; }
+  .esg-goal-t { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 600; color: #E2E8F0; }
+  .esg-goal-t b { color: #fff; }
+  .esg-track { height: 10px; border-radius: 5px; background: rgba(255, 255, 255, .18); overflow: hidden; }
+  .esg-track span { display: block; height: 100%; width: 0; border-radius: 5px; background: #fff; transition: width 1.4s var(--ease); }
+  .esg-goal .muted { color: #CBD5E0; font-size: 13px; }
+  .esg-ring { position: relative; width: 220px; height: 220px; }
+  .esg-ring svg { width: 100%; height: 100%; rotate: -90deg; }
+  .esg-ring .rt { stroke: rgba(255, 255, 255, .16); }
+  .esg-ring .rv { stroke: #fff; transition: stroke-dashoffset 1.4s var(--ease); }
+  .esg-ring .rc { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .esg-ring .rc b { font-size: 48px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+  .esg-ring .rc span { font-size: 13px; color: #E2E8F0; margin-top: 6px; }
+  .eq-tiles { list-style: none; margin: 0 0 var(--gap); padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+  .eq-tiles li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; padding: 20px; background: var(--white); border: 2px solid var(--eco); border-radius: var(--radius); }
+  .eq-ic { grid-row: span 3; display: grid; place-items: center; width: 52px; height: 52px; border-radius: var(--radius); background: var(--eco-soft); color: var(--eco); }
+  .eq-tiles b { font-size: 34px; font-weight: 800; letter-spacing: -.035em; line-height: 1.05; }
+  .eq-tiles b small { font-size: 16px; font-weight: 700; letter-spacing: -.01em; margin-left: 4px; }
+  .eq-tiles .eq-l { font-size: 14px; font-weight: 600; }
+  .eq-tiles .eq-n { font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 4px; }
+  .esg-method { margin-top: 16px; display: flex; gap: 10px; font-size: 13px; color: var(--ink-2); line-height: 1.5; max-width: 900px; }
+  .esg-method .i { color: var(--eco); flex: none; margin-top: 2px; }
+  .scrim { position: fixed; inset: 0; z-index: 35; background: rgba(17, 17, 17, .38); }
+  .tbl .meta > span { display: none; }
+
+  /* ---------- Адаптив ---------- */
+  @media (max-width: 1279px) {
+    :root { --side-w: 264px; --gap: 16px; }
+    .nav a { font-size: 13px; gap: 10px; padding: 10px; }
+    main { padding: 24px 24px 48px; }
+    .topbar { padding: 0 16px 0 24px; }
+  }
+  @media (max-width: 1359px) {
+    .tbl .c-role { display: none; }
+    .tbl .meta, .tbl .meta .m-role { display: block; }
+  }
+  @media (max-width: 1239px) {
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi { min-height: 150px; }
+    .tbl .c-role, .tbl .c-go { display: none; }
+    .tbl .meta, .tbl .meta .m-role { display: block; }
+  }
+  @media (max-width: 1239px) {
+    .qr-layout { grid-template-columns: 320px minmax(0, 1fr); }
+    .a-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .eq-tiles li { grid-template-columns: minmax(0, 1fr); }
+    .eq-ic { grid-row: auto; margin-bottom: 8px; }
+  }
+  @media (max-width: 1099px) {
+    .grid-2, .an-bottom { grid-template-columns: minmax(0, 1fr); }
+    .qr-layout { grid-template-columns: 300px minmax(0, 1fr); gap: 20px; }
+    .sheets { padding: 20px; }
+    .esg-hero { padding: 28px; gap: 24px; }
+    .esg-ring { width: 180px; height: 180px; }
+    .esg-ring .rc b { font-size: 40px; }
+  }
+  @media (max-width: 1023px) {
+    .qr-layout { grid-template-columns: minmax(0, 1fr); }
+    .qr-opts { position: static; max-height: none; overflow: visible; }
+    .opt-go { position: static; margin: 0; padding: 0; background: none; }
+    .tbl .c-status { display: none; }
+    .tbl .meta .m-status { display: block; margin-top: 6px; }
+  }
+  @media (max-width: 899px) {
+    .app { grid-template-columns: minmax(0, 1fr); }
+    .side {
+      position: fixed; left: 0; top: 0; bottom: 0; width: min(304px, 86vw); height: auto;
+      translate: -100% 0; visibility: hidden; box-shadow: var(--shadow-lg);
+      transition: translate var(--dur-3) var(--ease), visibility 0s linear var(--dur-3);
+    }
+    .side.open { translate: 0 0; visibility: visible; transition-delay: 0s; }
+    .menu-btn { display: inline-grid; }
+    .topbar { padding: 0 12px; }
+    .kbd, .me-text, .me > .i { display: none; }
+    .search input { padding-right: 8px; }
+    .me { padding: 4px; }
+    dialog.drawer--wide { width: min(560px, 100vw); }
+    .emp-grid { grid-template-columns: minmax(0, 1fr); }
+    .emp-info, .emp-actions { order: -1; } /* в одну колонку действия идут первыми, превью — в конце */
+    .preview { position: static; }
+  }
+  @media (max-width: 699px) {
+    main { padding: 20px 16px 40px; }
+    .topbar { gap: 4px; padding: 0 8px; }
+    .page-head { margin-bottom: 18px; }
+    .page-head h1 { font-size: 26px; }
+    .page-head .actions { width: 100%; }
+    .page-head .actions .btn { flex: 1; }
+    [data-view=dashboard] .page-head .btn--ghost { display: none; }
+    .kpis { gap: 10px; }
+    .kpi { padding: 14px; min-height: 0; gap: 8px; grid-template-rows: auto auto 1fr; }
+    .kpi-top { font-size: 13px; align-items: flex-start; flex-direction: column; gap: 8px; }
+    .kpi-ic { width: 32px; height: 32px; }
+    .kpi-val { align-self: start; gap: 6px; }
+    .kpi-val b { font-size: 26px; }
+    .kpi-val span { font-size: 13px; }
+    .kpi-foot { align-self: end; min-height: 0; }
+    .filters .field { width: auto; flex: 1 1 150px; }
+    .f-count { margin-left: 0; padding-bottom: 0; flex-basis: 100%; }
+    .kpi-spark { display: none; }
+    .tbl-card .card-head { padding: 16px 16px 12px; }
+    .tbl-card .seg { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+    .seg button { padding: 0 10px; justify-content: center; }
+    .tbl th.c-scans .th-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .tbl th.c-scans .th-ic { display: block; }
+    .tbl .c-salon, .tbl .c-status, .tbl .c-go { display: none; }
+    .tbl .meta .m-salon, .tbl .meta .m-status { display: block; }
+    .tbl .meta .m-status { margin-top: 6px; }
+    .tbl .c-photo { padding-left: 16px; width: 56px; }
+    .tbl .nm { white-space: normal; }
+    .tbl .sc .spark, .tbl .nodata { display: none; }
+    .tbl td.c-scans { padding-right: 16px; text-align: right; }
+    .tbl th.c-scans { text-align: right; padding-right: 16px; }
+    .hbars li { grid-template-columns: minmax(0, 110px) minmax(0, 1fr) auto; }
+    .dr-body { padding: 16px; }
+    .dr-head { padding: 12px 8px 12px 16px; }
+    .form-row { grid-template-columns: minmax(0, 1fr); }
+    .toast-wrap { left: 16px; right: 16px; bottom: 16px; }
+    .qr-opts { padding: 16px; }
+    .sheets { padding: 12px; }
+    .esg-hero { grid-template-columns: minmax(0, 1fr); padding: 24px 20px; }
+    .esg-ring { order: -1; width: 150px; height: 150px; }
+    .esg-ring .rc b { font-size: 34px; }
+    .esg-ring .rc span { font-size: 12px; }
+    .esg-lead { font-size: 15px; }
+    .eq-tiles { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .eq-tiles li { grid-template-columns: auto minmax(0, 1fr); padding: 16px; }
+    .eq-ic { grid-row: span 3; margin: 0; width: 44px; height: 44px; }
+    .eq-tiles b { font-size: 28px; }
+    .a-stats { gap: 10px; }
+    .a-stats li { padding: 14px; }
+    .a-stats b { font-size: 24px; }
+    .heat-card .card-body { overflow-x: auto; }
+    .heat { min-width: 620px; }
+    .leader li { grid-template-columns: 28px 36px minmax(0, 1fr) 48px; }
+    .leader .hb-track { display: none; }
+    #an-salons .hbars li, .hbars li { grid-template-columns: minmax(0, 118px) minmax(0, 1fr) auto; }
+  }
+</style>
+<link rel="icon" type="image/png" href="logo-mark.png">
+<link rel="apple-touch-icon" href="logo-mark.png">
+</head>
+<body>
+<a class="skip" href="#main">Перейти к содержимому</a>
+<div class="app">
+  <aside class="side" id="side" aria-label="Основная навигация">
+    <a class="logo" href="#dashboard" aria-label="НИКАМЕД — на главную панели">
+      <img class="logo-img" src="logo.png" width="117" height="36" alt="Никамед">
+      <small>Admin</small>
+    </a>
+    <nav>
+      <p class="nav-label" id="nav-l">Управление</p>
+      <ul class="nav" aria-labelledby="nav-l">
+        <li><a href="#dashboard" data-route="dashboard"><i data-lucide="layout-dashboard" class="i"></i>Панель управления</a></li>
+        <li><a href="#profiles" data-route="profiles"><i data-lucide="users" class="i"></i>Профили сотрудников<span class="count num" id="nav-count"></span></a></li>
+        <li><a href="#qr" data-route="qr"><i data-lucide="qr-code" class="i"></i>Генератор пакетов QR-кодов</a></li>
+        <li><a href="#analytics" data-route="analytics"><i data-lucide="chart-column" class="i"></i>Аналитика и сканирование</a></li>
+        <li><a href="#esg" data-route="esg"><i data-lucide="leaf" class="i"></i><span>Показатели <span class="nowrap">ESG/экологии</span></span></a></li>
+      </ul>
+    </nav>
+    <a class="gt" href="#esg" aria-label="НИКАМЕД ESG: прогресс к цели, подробнее">
+      <span class="gt-top"><span class="gt-ico"><i data-lucide="leaf" class="i i-sm"></i></span><b>ESG</b><span class="gt-pct num" id="gt-pct"></span></span>
+      <span class="gt-num"><b class="num" id="gt-now"></b> <span class="num" id="gt-goal"></span></span>
+      <span class="gt-bar" aria-hidden="true"><span id="gt-fill"></span></span>
+      <span class="gt-cap">листов бумаги к цели 2026 года</span>
+    </a>
+  </aside>
+
+  <div class="main-col">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menu-btn" type="button" aria-label="Открыть меню" aria-controls="side" aria-expanded="false"><i data-lucide="menu" class="i"></i></button>
+      <div class="search" role="search">
+        <label for="q" class="sr-only">Поиск сотрудников или площадок</label>
+        <i data-lucide="search" class="i i-sm search-ico"></i>
+        <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Поиск сотрудников или площадок..."
+          role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="q-list" aria-describedby="q-hint">
+        <kbd class="kbd" id="q-hint" title="Нажмите / для поиска"><span class="sr-only">Горячая клавиша: </span>/</kbd>
+        <div class="q-pop" id="q-pop" hidden>
+          <ul class="q-list" id="q-list" role="listbox" aria-label="Быстрые результаты"></ul>
+          <p class="q-foot" id="q-foot"></p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="bell" type="button" popovertarget="notif" aria-label="Уведомления">
+          <i data-lucide="bell" class="i"></i><span class="bell-badge num" id="bell-badge"></span>
+        </button>
+        <button class="me" id="me-btn" type="button" popovertarget="me-menu" aria-label="Меню администратора">
+          <img class="avatar" id="me-photo" width="36" height="36" alt="">
+          <span class="me-text"><b id="me-name"></b><small id="me-role"></small></span>
+          <i data-lucide="chevron-down" class="i i-sm"></i>
+        </button>
+      </div>
+      <div popover id="notif" class="pop pop-notif" aria-label="Уведомления">
+        <div class="pop-head"><h2>Уведомления</h2><button class="link-btn" id="mark-read" type="button">Отметить все прочитанными</button></div>
+        <ul class="notif-list" id="notif-list"></ul>
+      </div>
+      <div popover id="me-menu" class="pop pop-me">
+        <div class="me-card"><img class="avatar" id="me-photo2" width="44" height="44" alt=""><div><b id="me-name2"></b><small id="me-role2"></small></div></div>
+        <div class="menu">
+          <a href="#profiles"><i data-lucide="users" class="i i-sm"></i>Мои сотрудники</a>
+          <a href="#esg"><i data-lucide="leaf" class="i i-sm"></i>ESG-отчётность</a>
+          <hr>
+          <button type="button" data-action="esg-csv"><i data-lucide="download" class="i i-sm"></i>Скачать ESG-отчёт (CSV)</button>
+          <button type="button" data-action="reset-local" id="reset-local" hidden><i data-lucide="rotate-ccw" class="i i-sm"></i>Сбросить добавленные визитки</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <section class="view" data-view="dashboard" aria-labelledby="h-dashboard" hidden>
+        <div class="page-head">
+          <div>
+            <h1 id="h-dashboard" tabindex="-1">Панель управления</h1>
+            <p><span id="today"></span> · Цифровые визитки ООО «НИКАМЕД»</p>
+          </div>
+          <div class="actions">
+            <a class="btn btn--ghost" href="#qr"><i data-lucide="printer" class="i i-sm"></i>Пакет QR-кодов</a>
+            <button class="btn btn--primary" type="button" data-action="new-employee"><i data-lucide="plus" class="i i-sm"></i>Выпустить визитку</button>
+          </div>
+        </div>
+
+        <ul class="kpis" aria-label="Ключевые показатели">
+          <li class="kpi kpi--eco">
+            <span class="kpi-top"><span class="kpi-ic"><i data-lucide="leaf" class="i"></i></span>Сэкономлено бумаги</span>
+            <span class="kpi-val"><b data-count="paperSaved">0</b> <span>листов</span></span>
+            <span class="kpi-foot"><span class="kpi-bar" aria-hidden="true"><span id="kpi-paper-fill"></span></span><span class="kpi-note" id="kpi-paper-note"></span></span>
+          </li>
+          <li class="kpi kpi--accent">
+            <span class="kpi-top"><span class="kpi-ic"><i data-lucide="qr-code" class="i"></i></span>Активные QR-коды</span>
+            <span class="kpi-val"><b data-count="activeQr">0</b> <span>кодов</span></span>
+            <span class="kpi-foot"><span class="kpi-note" id="kpi-qr-note"></span></span>
+          </li>
+          <li class="kpi kpi--ink">
+            <span class="kpi-top"><span class="kpi-ic"><i data-lucide="scan-line" class="i"></i></span>Сканирований за 30 дней</span>
+            <span class="kpi-val"><b data-count="scansMonth">0</b><span class="kpi-spark" id="kpi-spark"></span></span>
+            <span class="kpi-foot"><span class="delta"><i data-lucide="trending-up" class="i i-sm"></i><span id="kpi-scans-delta"></span></span><span class="kpi-note">к прошлому месяцу</span></span>
+          </li>
+          <li class="kpi kpi--accent">
+            <span class="kpi-top"><span class="kpi-ic"><i data-lucide="calendar-check" class="i"></i></span>Запросов на встречу</span>
+            <span class="kpi-val"><b data-count="bookings">0</b></span>
+            <span class="kpi-foot"><span class="delta"><i data-lucide="trending-up" class="i i-sm"></i><span id="kpi-book-delta"></span></span><span class="kpi-note" id="kpi-book-note"></span></span>
+          </li>
+        </ul>
+
+        <section class="card tbl-card" aria-labelledby="h-cards">
+          <div class="card-head">
+            <div><h2 id="h-cards">Активные цифровые визитки</h2><p class="sub" id="tbl-sub"></p></div>
+            <div class="seg" role="tablist" aria-label="Фильтр по статусу" id="status-tabs">
+              <button role="tab" type="button" data-status="all" aria-selected="true">Все <span class="n"></span></button>
+              <button role="tab" type="button" data-status="active" aria-selected="false">Активные <span class="n"></span></button>
+              <button role="tab" type="button" data-status="paused" aria-selected="false">На паузе <span class="n"></span></button>
+              <button role="tab" type="button" data-status="draft" aria-selected="false">Черновики <span class="n"></span></button>
+            </div>
+          </div>
+          <div class="q-chip" id="q-chip" hidden><i data-lucide="search" class="i i-sm"></i><span></span><button type="button" class="link-btn" data-action="clear-q">Сбросить поиск</button></div>
+          <div class="tbl-wrap">
+            <table class="tbl" id="tbl">
+              <caption class="sr-only">Цифровые визитки сотрудников. Нажмите на строку, чтобы открыть карточку.</caption>
+              <thead><tr>
+                <th scope="col" class="c-photo"><span class="sr-only">Фото</span></th>
+                <th scope="col" data-sort="name"><button type="button">Имя<i data-lucide="chevron-down" class="i i-sm"></i></button></th>
+                <th scope="col" data-sort="role" class="c-role"><button type="button">Должность<i data-lucide="chevron-down" class="i i-sm"></i></button></th>
+                <th scope="col" data-sort="salon" class="c-salon"><button type="button">Площадка<i data-lucide="chevron-down" class="i i-sm"></i></button></th>
+                <th scope="col" data-sort="scans" class="c-scans"><button type="button"><i data-lucide="scan-line" class="i i-sm th-ic"></i><span class="th-t">Сканирования</span><i data-lucide="chevron-down" class="i i-sm"></i></button></th>
+                <th scope="col" data-sort="status" class="c-status"><button type="button">Статус<i data-lucide="chevron-down" class="i i-sm"></i></button></th>
+                <th scope="col" class="c-go"><span class="sr-only">Открыть</span></th>
+              </tr></thead>
+              <tbody id="tbody"></tbody>
+            </table>
+            <div class="empty" id="tbl-empty" hidden>
+              <span class="empty-ic"><i data-lucide="search" class="i i-lg"></i></span>
+              <b>Ничего не нашлось</b>
+              <p id="tbl-empty-text">Попробуйте другое имя, площадку или город — или сбросьте фильтры.</p>
+              <button class="btn btn--ghost" type="button" data-action="reset-filters"><i data-lucide="rotate-ccw" class="i i-sm"></i>Сбросить фильтры</button>
+            </div>
+          </div>
+        </section>
+
+        <div class="grid-2 dash-charts">
+          <section class="card" aria-labelledby="h-dscans">
+            <div class="card-head">
+              <div><h2 id="h-dscans">Сканирования за 30 дней</h2><p class="sub" id="dscans-sub"></p></div>
+              <a class="link-btn" href="#analytics">Вся аналитика <i data-lucide="arrow-right" class="i i-sm" style="vertical-align:-3px"></i></a>
+            </div>
+            <div class="card-body"><div class="chart-box" id="dash-line"></div></div>
+          </section>
+          <section class="card" aria-labelledby="h-dch">
+            <div class="card-head"><div><h2 id="h-dch">Каналы сканирования</h2><p class="sub">Доля за 30 дней</p></div></div>
+            <div class="card-body" id="dash-channels"></div>
+          </section>
+        </div>
+      </section>
+      <section class="view" data-view="profiles" aria-labelledby="h-profiles" hidden>
+        <div class="page-head">
+          <div>
+            <h1 id="h-profiles" tabindex="-1">Профили сотрудников</h1>
+            <p id="prof-sub"></p>
+          </div>
+          <div class="actions">
+            <button class="btn btn--primary" type="button" data-action="new-employee"><i data-lucide="user-plus" class="i i-sm"></i>Добавить сотрудника</button>
+          </div>
+        </div>
+        <div class="filters">
+          <label class="field"><span>Площадка</span><select class="select" id="f-salon"><option value="all">Все площадки</option></select></label>
+          <label class="field"><span>Статус визитки</span><select class="select" id="f-status">
+            <option value="all">Любой статус</option><option value="active">Активна</option><option value="paused">На паузе</option><option value="draft">Черновик</option></select></label>
+          <p class="f-count" id="prof-count" aria-live="polite"></p>
+        </div>
+        <div class="salon-strip" id="salon-strip" hidden></div>
+        <ul class="people" id="people" aria-label="Сотрудники"></ul>
+        <div class="empty card" id="people-empty" hidden>
+          <span class="empty-ic"><i data-lucide="users" class="i i-lg"></i></span>
+          <b>Сотрудников с такими условиями нет</b>
+          <p>Измените площадку, статус или поисковый запрос.</p>
+          <button class="btn btn--ghost" type="button" data-action="reset-filters"><i data-lucide="rotate-ccw" class="i i-sm"></i>Сбросить фильтры</button>
+        </div>
+      </section>
+      <section class="view" data-view="qr" aria-labelledby="h-qr" hidden>
+        <div class="page-head">
+          <div>
+            <h1 id="h-qr" tabindex="-1">Генератор пакетов QR&#8209;кодов</h1>
+            <p>Печатные листы A4: каждый код ведёт на живую цифровую визитку — её можно обновить без перепечатки.</p>
+          </div>
+        </div>
+        <div class="qr-layout">
+          <form class="card qr-opts" id="qr-form" aria-label="Параметры пакета">
+            <fieldset class="opt">
+              <legend class="opt-h"><span class="step">1</span>Кого включить</legend>
+              <label class="field"><span>Площадка</span><select class="select" id="qr-salon"><option value="all">Все площадки</option></select></label>
+              <div class="pick-head">
+                <label class="chk"><input type="checkbox" id="qr-all"><span>Выбрать всех</span></label>
+                <span class="muted num" id="qr-picked"></span>
+              </div>
+              <ul class="pick-list" id="qr-list"></ul>
+            </fieldset>
+            <fieldset class="opt">
+              <legend class="opt-h"><span class="step">2</span>Оформление</legend>
+              <div class="opt-sub" id="qr-color-l">Цвет кода</div>
+              <div class="swatches" role="radiogroup" aria-labelledby="qr-color-l">
+                <label><input type="radio" name="qrc" value="graphite" checked><span><i style="background:#1A202C"></i>Графитовый</span></label>
+                <label><input type="radio" name="qrc" value="red"><span><i style="background:#BF1F32"></i>Красный</span></label>
+                <label><input type="radio" name="qrc" value="navy"><span><i style="background:#1A365D"></i>Тёмно-синий</span></label>
+              </div>
+              <label class="tgl"><input type="checkbox" id="qr-caption" checked><span class="sw" aria-hidden="true"></span><span>Подпись под кодом: имя и должность</span></label>
+              <div class="opt-sub" id="qr-size-l">Размер кода</div>
+              <div class="swatches sizes" role="radiogroup" aria-labelledby="qr-size-l">
+                <label><input type="radio" name="qrs" value="s"><span><b>S</b>20 на листе</span></label>
+                <label><input type="radio" name="qrs" value="m" checked><span><b>M</b>12 на листе</span></label>
+                <label><input type="radio" name="qrs" value="l"><span><b>L</b>6 на листе</span></label>
+              </div>
+            </fieldset>
+            <div class="opt-go">
+              <button class="btn btn--primary btn--block" type="submit"><i data-lucide="sparkles" class="i i-sm"></i>Сгенерировать пакет</button>
+              <p class="muted" id="qr-eco"></p>
+            </div>
+          </form>
+          <section class="qr-out" aria-labelledby="h-sheet">
+            <div class="qr-bar">
+              <div><h2 id="h-sheet">Печатный лист</h2><p class="muted" id="qr-meta">Выберите сотрудников и нажмите «Сгенерировать пакет»</p></div>
+              <button class="btn btn--dark" type="button" id="qr-print" disabled><i data-lucide="printer" class="i i-sm"></i>Печать</button>
+            </div>
+            <div class="sheets" id="qr-sheets">
+              <div class="sheet sheet--empty"><span class="empty-ic"><i data-lucide="qr-code" class="i i-lg"></i></span><b>Здесь появится лист A4</b><p>Коды строятся прямо в браузере и ведут на card.html?id=… каждого сотрудника.</p></div>
+            </div>
+          </section>
+        </div>
+      </section>
+      <section class="view" data-view="analytics" aria-labelledby="h-analytics" hidden>
+        <div class="page-head">
+          <div>
+            <h1 id="h-analytics" tabindex="-1">Аналитика и сканирование</h1>
+            <p>Как клиенты находят визитки, когда их открывают и кто из команды приводит больше всего контактов · последние 30 дней</p>
+          </div>
+        </div>
+        <ul class="a-stats" id="a-stats" aria-label="Итоги за 30 дней"></ul>
+        <div class="grid-2">
+          <section class="card" aria-labelledby="h-aline">
+            <div class="card-head"><div><h2 id="h-aline">Сканирования по дням</h2><p class="sub">Наведите курсор или сфокусируйте график и листайте стрелками</p></div></div>
+            <div class="card-body">
+              <div class="chart-box" id="an-line"></div>
+              <details class="data-table"><summary>Показать данные таблицей</summary><div class="dt-wrap"><table id="an-table"><thead><tr><th scope="col">Дата</th><th scope="col">Сканирований</th></tr></thead><tbody></tbody></table></div></details>
+            </div>
+          </section>
+          <section class="card" aria-labelledby="h-ach">
+            <div class="card-head"><div><h2 id="h-ach">Каналы сканирования</h2><p class="sub">Доля за 30 дней</p></div></div>
+            <div class="card-body" id="an-channels"></div>
+          </section>
+        </div>
+        <section class="card heat-card" aria-labelledby="h-heat">
+          <div class="card-head">
+            <div><h2 id="h-heat">Когда открывают визитки</h2><p class="sub" id="heat-sub"></p></div>
+            <div class="heat-legend" id="heat-legend" aria-label="Шкала: сканирований в час"></div>
+          </div>
+          <div class="card-body"><div class="heat" id="heat" tabindex="0" role="group" aria-label="Тепловая карта: день недели × час. Стрелки — перемещение по ячейкам."></div></div>
+        </section>
+        <div class="grid-2 an-bottom">
+          <section class="card" aria-labelledby="h-top">
+            <div class="card-head"><div><h2 id="h-top">Топ площадок</h2><p class="sub">Сумма сканирований визиток сотрудников площадки</p></div></div>
+            <div class="card-body" id="an-salons"></div>
+          </section>
+          <section class="card" aria-labelledby="h-lead">
+            <div class="card-head"><div><h2 id="h-lead">Лидеры команды</h2><p class="sub">Больше всего сканирований визитки</p></div></div>
+            <div class="card-body"><ol class="leader" id="an-leader"></ol></div>
+          </section>
+        </div>
+      </section>
+      <section class="view" data-view="esg" aria-labelledby="h-esg" hidden>
+        <div class="page-head">
+          <div>
+            <p class="eyebrow"><i data-lucide="leaf" class="i i-sm"></i>НИКАМЕД · ESG</p>
+            <h1 id="h-esg" tabindex="-1">Показатели ESG и экологии</h1>
+            <p>Цифровые визитки вместо бумажных тиражей: вклад компании за последние 12 месяцев.</p>
+          </div>
+          <div class="actions"><button class="btn btn--eco" type="button" data-action="esg-csv"><i data-lucide="download" class="i i-sm"></i>Скачать ESG-отчёт</button></div>
+        </div>
+        <section class="esg-hero" aria-labelledby="esg-big">
+          <div class="esg-hero-l">
+            <h2 class="esg-big" id="esg-big"><b id="esg-sheets">0</b><span>листов бумаги сэкономлено</span></h2>
+            <p class="esg-lead" id="esg-lead"></p>
+            <div class="esg-goal">
+              <div class="esg-goal-t"><span>Цель на 2026 год</span><b class="num" id="esg-goal-t"></b></div>
+              <div class="esg-track" aria-hidden="true"><span id="esg-track"></span></div>
+              <p class="muted" id="esg-left"></p>
+            </div>
+          </div>
+          <div class="esg-ring" id="esg-ring"></div>
+        </section>
+        <ul class="eq-tiles" id="eq-tiles" aria-label="Экологические эквиваленты"></ul>
+        <section class="card" aria-labelledby="h-month">
+          <div class="card-head">
+            <div><h2 id="h-month">Листов сэкономлено по месяцам</h2><p class="sub">Октябрь 2025 — сентябрь 2026</p></div>
+            <span class="badge badge--success" id="esg-growth"></span>
+          </div>
+          <div class="card-body"><div class="chart-box" id="esg-cols" data-label="Листов сэкономлено по месяцам"></div></div>
+        </section>
+        <p class="esg-method"><i data-lucide="leaf" class="i i-sm"></i><span>Оценка по отраслевым коэффициентам: ≈5&nbsp;г CO₂e и ≈10&nbsp;л воды на производство одного листа A4, ≈8&nbsp;300&nbsp;листов из одного дерева. Точные значения зависят от поставщика бумаги — цифры подходят для внутренней ESG-отчётности, но не для верифицированного углеродного аудита.</span></p>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="scrim" id="scrim" hidden></div>
+
+<dialog class="drawer drawer--wide" id="emp-dlg" aria-labelledby="emp-name">
+  <div class="dr-in">
+    <header class="dr-head" id="emp-head"></header>
+    <div class="dr-body emp-grid">
+      <figure class="preview">
+        <div class="phone"><span class="island" aria-hidden="true"></span><div class="phone-screen">
+          <div class="sbar" aria-hidden="true">9:41<span><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></span></div>
+          <div class="phone-ph" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          <iframe id="emp-frame" title="Превью цифровой визитки" loading="lazy"></iframe></div></div>
+        <figcaption><i data-lucide="eye" class="i i-sm"></i>Живое превью · <span id="emp-url" class="muted"></span></figcaption>
+      </figure>
+      <div class="emp-info" id="emp-info"></div>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="drawer" id="form-dlg" aria-labelledby="form-title">
+  <form class="dr-in" id="emp-form" novalidate>
+    <header class="dr-head">
+      <span class="dr-ic"><i data-lucide="user-plus" class="i" id="form-ic"></i></span>
+      <div class="dr-t"><h2 id="form-title">Новый сотрудник</h2><p id="form-sub">Заполните данные — визитка с QR-кодом появится сразу после сохранения.</p></div>
+      <button class="icon-btn" type="button" data-close aria-label="Закрыть"><i data-lucide="x" class="i"></i></button>
+    </header>
+    <div class="dr-body form-body">
+      <p class="form-err" id="form-err" role="alert" hidden></p>
+
+      <fieldset class="fs">
+        <legend class="fs-h">Фото</legend>
+        <div class="ph-row" id="ph-drop">
+          <span class="ph-pic" id="ph-pic" aria-hidden="true"></span>
+          <div class="ph-ctl">
+            <div class="ph-btns">
+              <label class="btn btn--ghost ph-up"><input type="file" id="ph-file" accept="image/*" class="sr-only"><i data-lucide="upload" class="i i-sm"></i><span id="ph-up-t">Загрузить фото</span></label>
+              <button class="btn btn--ghost ph-del" type="button" id="ph-del" hidden><i data-lucide="trash-2" class="i i-sm"></i>Убрать</button>
+            </div>
+            <p class="hint" id="ph-hint">JPG или PNG, лицо крупно. Обрежем до квадрата. Без фото на визитке будут инициалы.</p>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fs">
+        <legend class="fs-h">Кто это</legend>
+        <div class="form-row form-row--fio">
+          <label class="field"><span>Имя</span><input class="input" name="firstName" autocomplete="off" autocapitalize="words" required maxlength="30" placeholder="Ольга"><em class="err">Укажите имя.</em></label>
+          <label class="field"><span>Отчество <small class="muted">если есть</small></span><input class="input" name="middleName" autocomplete="off" autocapitalize="words" maxlength="30" placeholder="Николаевна"><em class="err">Только буквы, пробел и дефис.</em></label>
+          <label class="field"><span>Фамилия</span><input class="input" name="lastName" autocomplete="off" autocapitalize="words" required maxlength="40" placeholder="Смирнова"><em class="err">Укажите фамилию.</em></label>
+        </div>
+        <p class="hint fio-prev" id="fio-prev" aria-live="polite"></p>
+        <label class="field"><span>Должность</span><input class="input" name="role" autocomplete="off" required maxlength="80" list="roles" placeholder="Например, Менеджер по продажам"><em class="err">Укажите должность.</em></label>
+        <datalist id="roles"></datalist>
+        <div class="form-row form-row--wide">
+          <label class="field"><span>Площадка</span><select class="select" name="salon" required><option value="">Выберите площадку</option></select><em class="err">Выберите площадку, где работает сотрудник.</em></label>
+          <label class="field"><span>Стаж, лет</span><input class="input" name="experience" type="number" inputmode="numeric" min="0" max="60" step="1" placeholder="0"><em class="err">Целое число от 0 до 60.</em></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="fs">
+        <legend class="fs-h">Контакты на визитке</legend>
+        <label class="field"><span>Мобильный телефон</span><input class="input num" name="phone" type="tel" inputmode="tel" autocomplete="off" required maxlength="18" placeholder="+7 900 123-45-67"><em class="err" id="phone-err">Нужен номер из 11 цифр, например +7 900 123-45-67.</em></label>
+        <div class="form-row">
+          <div class="field"><span class="lbl-row"><label for="f-wa">WhatsApp <small class="muted">необязательно</small></label><button type="button" class="link-btn" id="wa-same">= мобильный</button></span><input class="input num" id="f-wa" name="whatsapp" type="tel" inputmode="tel" autocomplete="off" maxlength="18" placeholder="Не показывать"><em class="err">Нужен номер из 11 цифр.</em></div>
+          <label class="field"><span>Telegram <small class="muted">необязательно</small></span><input class="input" name="telegram" autocomplete="off" maxlength="33" placeholder="@nickname"><em class="err">5–32 символа: латиница, цифры, «_».</em></label>
+        </div>
+        <div class="form-row form-row--wide">
+          <label class="field"><span>Рабочий телефон <small class="muted">необязательно</small></span><input class="input num" name="workPhone" type="tel" inputmode="tel" autocomplete="off" maxlength="20" placeholder="+7 (495) 609-63-86"><em class="err">Нужен номер из 11 цифр.</em></label>
+          <label class="field"><span>Доб.</span><input class="input num" name="workExt" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="200"><em class="err">Только цифры.</em></label>
+        </div>
+        <label class="field"><span>E-mail <small class="muted">необязательно</small></span><input class="input" name="email" type="email" inputmode="email" autocomplete="off" maxlength="80" placeholder="familiya@nikamed.ru"><em class="err">Проверьте адрес: например, ivanova@nikamed.ru</em></label>
+      </fieldset>
+
+      <fieldset class="fs">
+        <legend class="fs-h">Экспертиза <small class="muted">до 5 тегов</small></legend>
+        <div class="field tag-field" id="tag-field">
+          <span class="sr-only" id="tag-l">Теги экспертизы</span>
+          <div class="tag-box" id="tag-box">
+            <ul class="tag-list" id="tag-list" aria-label="Добавленные теги"></ul>
+            <input class="tag-input" id="tag-input" list="tag-sugg" autocomplete="off" maxlength="40" aria-labelledby="tag-l" aria-describedby="tag-hint" placeholder="Например, Компрессионный трикотаж">
+          </div>
+          <datalist id="tag-sugg"></datalist>
+          <p class="hint" id="tag-hint">Enter или запятая — добавить. Показываются на визитке под должностью.</p>
+        </div>
+      </fieldset>
+
+      <fieldset class="fs" id="fs-status">
+        <legend class="fs-h">Публикация</legend>
+        <div class="pub">
+          <label class="pub-opt"><input type="radio" name="status" value="draft" checked><span><b>Черновик</b><small>Визитку видите только вы в админке. Опубликуете позже.</small></span></label>
+          <label class="pub-opt"><input type="radio" name="status" value="active"><span><b>Опубликовать сразу</b><small>Ссылка и QR-код заработают для клиентов.</small></span></label>
+        </div>
+      </fieldset>
+    </div>
+    <footer class="dr-foot">
+      <button class="btn btn--ghost" type="button" data-close>Отмена</button>
+      <button class="btn btn--primary" type="submit" id="form-submit"><i data-lucide="check" class="i i-sm"></i><span>Создать визитку</span></button>
+    </footer>
+  </form>
+</dialog>
+
+<div class="toast-wrap" aria-live="polite" id="toasts"></div>
+<div class="tip" id="tip" aria-hidden="true" hidden></div>
+<p class="sr-only" id="sr-live" aria-live="polite"></p>
+
+<script src="data.js"></script>
+<script src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+(() => {
+  'use strict';
+  const D = window.NIKAMED;
+  const nf = new Intl.NumberFormat('ru-RU');
+  const fmt = n => nf.format(n);
+  const fmt1 = n => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(n);
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const icons = () => window.lucide && lucide.createIcons();
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const today = new Date();
+  const dayMs = 864e5;
+
+  /* ---------- Ядро: данные, форматирование, общие куски разметки ---------- */
+  const S = { q: '', status: 'all', sort: { key: 'scans', dir: 'desc' }, salon: 'all', pstatus: 'all', range: 30 };
+  const ST = {
+    active: { l: 'Активна', c: 'badge--success' },
+    paused: { l: 'На паузе', c: 'badge--warning' },
+    draft: { l: 'Черновик', c: '' },
+  };
+  const salonOf = e => D.salon(e.salon) || { name: '—', city: '', address: '' };
+  // Инициалы для аватара: имя + фамилия (отчество пропускаем)
+  const initials = n => { const w = String(n).trim().split(/\s+/); return ((w[0]?.[0] || '') + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase(); };
+  const ava = (e, size = 40) => e.photo
+    ? `<img class="ava" src="${esc(e.photo)}" width="${size}" height="${size}" style="width:${size}px;height:${size}px" alt="" loading="lazy" data-ini="${esc(initials(e.name))}">`
+    : `<span class="ava" style="width:${size}px;height:${size}px" aria-hidden="true">${esc(initials(e.name))}</span>`;
+  const badge = s => `<span class="badge ${ST[s].c}"><span class="dot"></span>${ST[s].l}</span>`;
+  const norm = s => String(s).toLowerCase().replace(/ё/g, 'е');
+  const hay = e => { const s = salonOf(e); return norm([e.name, e.role, s.name, s.city, s.address, ...(e.tags || [])].join(' ')); };
+  const terms = () => norm(S.q).trim().split(/\s+/).filter(Boolean);
+  const matches = e => terms().every(t => hay(e).includes(t));
+  const hl = (text, ts = terms()) => {
+    let out = esc(text);
+    ts.forEach(t => { const i = norm(out).indexOf(esc(t)); if (i >= 0) out = out.slice(0, i) + '<mark>' + out.slice(i, i + esc(t).length) + '</mark>' + out.slice(i + esc(t).length); });
+    return out;
+  };
+  const sum = a => a.reduce((x, y) => x + y, 0);
+  const dateOf = (i, n) => new Date(today.getTime() - (n - 1 - i) * dayMs);
+  const dShort = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' });
+  const dLong = new Intl.DateTimeFormat('ru-RU', { weekday: 'short', day: 'numeric', month: 'long' });
+  const plural = (n, one, few, many) => { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many; };
+
+  // Фото не загрузилось — показываем инициалы
+  document.addEventListener('error', ev => {
+    const img = ev.target;
+    if (img.tagName === 'IMG' && img.classList.contains('ava')) {
+      const s = document.createElement('span');
+      s.className = 'ava'; s.style.cssText = img.style.cssText; s.textContent = img.dataset.ini || '';
+      s.setAttribute('aria-hidden', 'true'); img.replaceWith(s);
+    }
+  }, true);
+
+  // action: { label, run } — кнопка в тосте (например, «Вернуть» после удаления)
+  function toast(text, icon = 'circle-check', action) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = `<i data-lucide="${icon}" class="i i-sm"></i><span></span>`;
+    t.querySelector('span').textContent = text;
+    const bye = () => { t.classList.add('out'); setTimeout(() => t.remove(), 300); };
+    if (action) {
+      const b = Object.assign(document.createElement('button'), { type: 'button', textContent: action.label });
+      b.addEventListener('click', () => { bye(); action.run(); });
+      t.append(b);
+    }
+    $('#toasts').append(t); icons();
+    setTimeout(bye, action ? 7000 : 3200);
+  }
+  function download(name, content, type) {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: name });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  // Досчёт чисел при загрузке; reduced-motion → сразу итог
+  function countUp(el, to, decimals = 0) {
+    const f = v => decimals ? fmt1(v) : fmt(Math.round(v));
+    if (reduced) { el.textContent = f(to); return; }
+    const t0 = performance.now(), dur = 1100;
+    const step = t => {
+      const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = f(to * e);
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  /* ---------- Тултип (общий для всех графиков) ---------- */
+  const tip = $('#tip');
+  function showTip(html, x, y) {
+    tip.innerHTML = html; tip.hidden = false;
+    const r = tip.getBoundingClientRect();
+    let left = x + 14, top = y - r.height - 12;
+    if (left + r.width > innerWidth - 8) left = x - r.width - 14;
+    if (top < 8) top = y + 18;
+    tip.style.left = Math.max(8, left) + 'px'; tip.style.top = top + 'px';
+  }
+  const hideTip = () => { tip.hidden = true; };
+  const say = text => { $('#sr-live').textContent = text; };
+  /* ---------- Графики: inline SVG вручную ---------- */
+  const niceStep = v => { const p = 10 ** Math.floor(Math.log10(v || 1)), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; };
+
+  // Спарклайн: линия 2px + заливка 10% + точка на последнем значении
+  function spark(vals, { w = 96, h = 28, color = 'var(--accent)', dot = true, fill = true, dotColor = color, pad = 3 } = {}) {
+    const max = Math.max(...vals, 1), min = Math.min(...vals, 0);
+    const x = i => pad + i * (w - pad * 2) / (vals.length - 1);
+    const y = v => pad + (h - pad * 2) * (1 - (v - min) / (max - min || 1));
+    const line = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join('');
+    const last = vals.length - 1;
+    return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true" focusable="false">
+      ${fill ? `<path d="${line}L${x(last).toFixed(1)} ${h}L${x(0).toFixed(1)} ${h}Z" fill="${color}" opacity=".14"/>` : ''}
+      <path d="${line}" fill="none" stroke="${color}" stroke-width="${fill ? 2 : 1.5}" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dot ? `<circle cx="${x(last).toFixed(1)}" cy="${y(vals[last]).toFixed(1)}" r="3" fill="${dotColor}" stroke="var(--spark-bg, #fff)" stroke-width="1.5"/>` : ''}</svg>`;
+  }
+
+  // Линейный график с областью, перекрестием и тултипом (мышь + клавиатура)
+  function lineChart(el, vals, { h = 240, color = 'var(--accent)', unit = 'сканирований' } = {}) {
+    const n = vals.length, W = Math.max(260, el.clientWidth), H = h;
+    const m = { t: 22, r: 14, b: 28, l: 46 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const step = niceStep(Math.max(...vals) / 4), top = Math.ceil(Math.max(...vals) * 1.04 / step) * step;
+    const x = i => m.l + i * iw / (n - 1), y = v => m.t + ih - v / top * ih;
+    const pts = vals.map((v, i) => `${x(i).toFixed(1)} ${y(v).toFixed(1)}`);
+    const every = Math.ceil(n / (W < 480 ? 4 : 7));
+    let grid = '', xl = '';
+    for (let t = 0; t <= top; t += step) grid += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(t)}" y2="${y(t)}" class="gl"/><text x="${m.l - 8}" y="${y(t) + 4}" class="ax" text-anchor="end">${fmt(t)}</text>`;
+    for (let i = n - 1; i >= 0; i -= every) xl += `<text x="${x(i)}" y="${H - 8}" class="ax" text-anchor="${i === n - 1 ? 'end' : 'middle'}">${i === n - 1 ? 'сегодня' : dShort.format(dateOf(i, n))}</text>`;
+    const maxI = vals.indexOf(Math.max(...vals));
+    el.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" tabindex="0" role="img"
+      aria-label="Сканирования по дням за ${n} ${plural(n, 'день', 'дня', 'дней')}: всего ${fmt(sum(vals))}, максимум ${fmt(vals[maxI])} — ${dLong.format(dateOf(maxI, n))}. Стрелки влево и вправо — значения по дням.">
+      ${grid}${xl}
+      <path d="M${pts.join('L')}L${x(n - 1)} ${y(0)}L${m.l} ${y(0)}Z" fill="var(--ink)" opacity=".05"/>
+      <path d="M${pts.join('L')}" fill="none" stroke="var(--ink)" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${x(n - 1)}" cy="${y(vals[n - 1])}" r="4.5" fill="${color}" stroke="#fff" stroke-width="2"/>
+      <text x="${x(n - 1) - 8}" y="${y(vals[n - 1]) + (vals[n - 2] > vals[n - 1] ? 20 : -10)}" text-anchor="end" class="ax-val">${fmt(vals[n - 1])}</text>
+      <g class="xh" visibility="hidden"><line y1="${m.t}" y2="${m.t + ih}" /><circle r="5" fill="${color}" stroke="#fff" stroke-width="2"/></g>
+      <rect x="${m.l}" y="0" width="${iw}" height="${H}" fill="transparent" class="hit"/></svg>`;
+    const svg = el.firstElementChild, xh = svg.querySelector('.xh');
+    let idx = n - 1;
+    const show = (i, cx, cy) => {
+      idx = i;
+      xh.setAttribute('visibility', 'visible');
+      xh.firstElementChild.setAttribute('x1', x(i)); xh.firstElementChild.setAttribute('x2', x(i));
+      xh.lastElementChild.setAttribute('cx', x(i)); xh.lastElementChild.setAttribute('cy', y(vals[i]));
+      const d = dateOf(i, n), prev = vals[i - 7];
+      const diff = prev ? Math.round((vals[i] / prev - 1) * 100) : null;
+      const html = `<b>${fmt(vals[i])}</b> <span>${unit}</span><small>${dLong.format(d)}${diff !== null ? ` · ${diff >= 0 ? '+' : '−'}${Math.abs(diff)}% к той же дате неделей ранее` : ''}</small>`;
+      if (cx == null) { const r = svg.getBoundingClientRect(); cx = r.left + x(i) * r.width / W; cy = r.top + y(vals[i]) * r.height / H; }
+      showTip(html, cx, cy);
+      return `${dLong.format(d)}: ${fmt(vals[i])} ${unit}`;
+    };
+    const hide = () => { xh.setAttribute('visibility', 'hidden'); hideTip(); };
+    svg.addEventListener('pointermove', e => {
+      const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * W / r.width;
+      show(Math.max(0, Math.min(n - 1, Math.round((px - m.l) / iw * (n - 1)))), e.clientX, e.clientY);
+    });
+    svg.addEventListener('pointerleave', hide);
+    svg.addEventListener('blur', hide);
+    svg.addEventListener('focus', () => say(show(idx)));
+    svg.addEventListener('keydown', e => {
+      const k = { ArrowLeft: -1, ArrowRight: 1, Home: -n, End: n }[e.key];
+      if (k == null) return;
+      e.preventDefault(); say(show(Math.max(0, Math.min(n - 1, idx + k))));
+    });
+  }
+
+  // Столбики: один цвет, 4px скругление на конце, тултип на каждом столбике
+  function columns(el, vals, labels, { h = 240, color = 'var(--eco)', unit = '', tipLabels = labels } = {}) {
+    const n = vals.length, W = Math.max(260, el.clientWidth), H = h;
+    const m = { t: 26, r: 8, b: 28, l: 46 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const step = niceStep(Math.max(...vals) / 4), top = Math.ceil(Math.max(...vals) * 1.02 / step) * step;
+    const band = iw / n, bw = Math.min(28, band * .62), y = v => m.t + ih - v / top * ih;
+    let g = '';
+    for (let t = 0; t <= top; t += step) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(t)}" y2="${y(t)}" class="gl"/><text x="${m.l - 8}" y="${y(t) + 4}" class="ax" text-anchor="end">${fmt(t)}</text>`;
+    const maxI = vals.indexOf(Math.max(...vals));
+    vals.forEach((v, i) => {
+      const cx = m.l + band * i + band / 2, bx = cx - bw / 2, by = y(v), bh = y(0) - by, r = Math.min(4, bh);
+      g += `<g class="col" tabindex="-1" data-i="${i}"><rect x="${m.l + band * i}" y="${m.t}" width="${band}" height="${ih}" fill="transparent"/>
+        <path d="M${bx} ${y(0)}V${by + r}Q${bx} ${by} ${bx + r} ${by}H${bx + bw - r}Q${bx + bw} ${by} ${bx + bw} ${by + r}V${y(0)}Z" fill="${color}" class="bar"/></g>`;
+      if (W / n > 34 || i % 2 === (n - 1) % 2) g += `<text x="${cx}" y="${H - 8}" class="ax" text-anchor="middle">${esc(labels[i])}</text>`;
+      if (i === maxI) g += `<text x="${cx}" y="${by - 8}" class="ax-val" text-anchor="middle">${fmt(v)}</text>`;
+    });
+    el.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" tabindex="0" role="img"
+      aria-label="${esc(el.dataset.label || '')}: максимум ${fmt(vals[maxI])} — ${esc(tipLabels[maxI])}. Стрелки влево и вправо — значения.">${g}</svg>`;
+    const svg = el.firstElementChild, cols = [...svg.querySelectorAll('.col')];
+    let idx = n - 1;
+    const show = (i, cx, cy) => {
+      idx = i; cols.forEach((c, j) => c.classList.toggle('on', j === i));
+      if (cx == null) { const r = cols[i].querySelector('.bar').getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top; }
+      showTip(`<b>${fmt(vals[i])}</b> <span>${unit}</span><small>${esc(tipLabels[i])}</small>`, cx, cy);
+      return `${tipLabels[i]}: ${fmt(vals[i])} ${unit}`;
+    };
+    cols.forEach((c, i) => c.addEventListener('pointermove', e => show(i, e.clientX, e.clientY)));
+    svg.addEventListener('pointerleave', () => { cols.forEach(c => c.classList.remove('on')); hideTip(); });
+    svg.addEventListener('blur', () => { cols.forEach(c => c.classList.remove('on')); hideTip(); });
+    svg.addEventListener('focus', () => say(show(idx)));
+    svg.addEventListener('keydown', e => {
+      const k = { ArrowLeft: -1, ArrowRight: 1, Home: -n, End: n }[e.key];
+      if (k == null) return;
+      e.preventDefault(); say(show(Math.max(0, Math.min(n - 1, idx + k))));
+    });
+  }
+
+  // Горизонтальные бары в HTML: подпись, дорожка, значение на конце
+  const hbars = (rows, { color = 'var(--accent)', unit = '' } = {}) => {
+    const max = Math.max(...rows.map(r => r.v), 1), total = sum(rows.map(r => r.v));
+    return `<ul class="hbars">${rows.map(r => `<li title="${esc(r.label)}: ${fmt(r.v)} ${unit} (${fmt1(r.v / total * 100)}%)">
+      <span class="hb-l">${r.icon ? `<i data-lucide="${r.icon}" class="i i-sm"></i>` : ''}<span>${esc(r.label)}${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</span></span>
+      <span class="hb-track"><span class="hb-bar" style="width:${(r.v / max * 100).toFixed(1)}%;background:${color}"></span></span>
+      <span class="hb-v num">${r.fmt ?? fmt(r.v)}</span></li>`).join('')}</ul>`;
+  };
+  /* ---------- Верхняя панель: поиск, уведомления, меню ---------- */
+  const q = $('#q'), qPop = $('#q-pop'), qList = $('#q-list');
+  let qItems = [], qActive = -1;
+
+  function applySearch() {
+    if (current === 'dashboard') renderTable();
+    if (current === 'profiles') renderProfiles();
+  }
+  function buildQuick() {
+    const ts = terms();
+    if (!ts.length) return closeQuick();
+    const emps = E.filter(matches).slice(0, 5);
+    const sals = D.salons.filter(s => ts.every(t => norm(`${s.name} ${s.city} ${s.address}`).includes(t))).slice(0, 3);
+    qItems = [...emps.map(e => ({ t: 'e', e })), ...sals.map(s => ({ t: 's', s }))];
+    let i = 0, html = '';
+    if (emps.length) html += `<li class="q-sec" role="presentation">Сотрудники</li>` + emps.map(e => `<li role="option" id="qo-${i}" data-i="${i++}" aria-selected="false">${ava(e, 36)}<span class="q-t"><b>${hl(e.name, ts)}</b><small>${hl(e.role, ts)} · ${hl(salonOf(e).name, ts)}</small></span><i data-lucide="arrow-up-right" class="i i-sm q-go"></i></li>`).join('');
+    if (sals.length) html += `<li class="q-sec" role="presentation">Площадки</li>` + sals.map(s => `<li role="option" id="qo-${i}" data-i="${i++}" aria-selected="false"><span class="q-ic"><i data-lucide="store" class="i i-sm"></i></span><span class="q-t"><b>${hl(s.name, ts)}</b><small>${hl(s.city, ts)} · ${esc(s.address)}</small></span><i data-lucide="arrow-right" class="i i-sm q-go"></i></li>`).join('');
+    if (!qItems.length) html = `<li class="q-sec" role="presentation" style="text-transform:none;letter-spacing:0;font-size:13px;font-weight:500">Ничего не найдено по «${esc(S.q.trim())}»</li>`;
+    qList.innerHTML = html;
+    const total = E.filter(matches).length;
+    $('#q-foot').textContent = qItems.length ? `Enter — показать все ${fmt(total)} в таблице · ↑↓ — выбор · Esc — закрыть` : '';
+    qPop.hidden = false; q.setAttribute('aria-expanded', 'true'); qActive = -1; q.removeAttribute('aria-activedescendant');
+    icons();
+  }
+  function closeQuick() { qPop.hidden = true; q.setAttribute('aria-expanded', 'false'); q.removeAttribute('aria-activedescendant'); qActive = -1; }
+  function setActive(i) {
+    const opts = $$('[role=option]', qList); if (!opts.length) return;
+    qActive = (i + opts.length) % opts.length;
+    opts.forEach((o, j) => o.setAttribute('aria-selected', String(j === qActive)));
+    q.setAttribute('aria-activedescendant', opts[qActive].id); opts[qActive].scrollIntoView({ block: 'nearest' });
+  }
+  function pick(i) {
+    const it = qItems[i]; if (!it) return;
+    closeQuick();
+    if (it.t === 'e') {
+      if (current !== 'dashboard' && current !== 'profiles') location.hash = '#dashboard';
+      openEmployee(it.e.id);
+    } else {
+      S.q = ''; q.value = ''; S.salon = it.s.id;
+      location.hash === '#profiles' ? renderProfiles() : (location.hash = '#profiles');
+    }
+  }
+  q.addEventListener('input', () => { S.q = q.value; applySearch(); buildQuick(); });
+  q.addEventListener('focus', () => { if (S.q.trim()) buildQuick(); });
+  q.addEventListener('blur', () => setTimeout(closeQuick, 120));
+  q.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (qPop.hidden) buildQuick(); setActive(qActive + (e.key === 'ArrowDown' ? 1 : -1)); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (qActive >= 0) return pick(qActive);
+      closeQuick();
+      if (current !== 'dashboard' && current !== 'profiles') location.hash = '#dashboard';
+      else $('.tbl-card').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+    } else if (e.key === 'Escape') {
+      if (!qPop.hidden) { e.preventDefault(); closeQuick(); }
+      else if (q.value) { e.preventDefault(); q.value = ''; S.q = ''; applySearch(); }
+      else q.blur();
+    }
+  });
+  qList.addEventListener('mousedown', e => e.preventDefault());
+  qList.addEventListener('click', e => { const li = e.target.closest('[role=option]'); if (li) pick(+li.dataset.i); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target;
+    if ((t instanceof Element && t.closest('input, textarea, select, [contenteditable]')) || $('dialog[open]')) return;
+    e.preventDefault(); q.focus(); q.select();
+  });
+  document.addEventListener('click', e => {
+    const a = e.target instanceof Element && e.target.closest('[data-action]'); if (!a) return;
+    const act = a.dataset.action;
+    if (act === 'clear-q' || act === 'reset-filters') {
+      q.value = ''; S.q = '';
+      if (act === 'reset-filters') { S.status = 'all'; S.salon = 'all'; S.pstatus = 'all'; }
+      applySearch();
+    }
+    if (act === 'new-employee') openForm(a);
+    if (act === 'esg-csv') { $('#me-menu').hidePopover?.(); esgCsv(); }
+    if (act === 'reset-local' && confirm('Удалить все добавленные и изменённые в этом браузере визитки и вернуть демо-данные?')) { D.resetLocal(); location.reload(); }
+  });
+
+  // Поповеры: нативный popover (Esc и клик вне закрывают сами), позиционируем под кнопкой
+  $$('[popover]').forEach(p => p.addEventListener('beforetoggle', e => {
+    if (e.newState !== 'open') return;
+    const btn = $(`[popovertarget="${p.id}"]`), r = btn.getBoundingClientRect();
+    p.style.top = (r.bottom + 8) + 'px';
+    p.style.setProperty('--r', Math.max(12, innerWidth - r.right) + 'px');
+  }));
+  $$('#me-menu a').forEach(a => a.addEventListener('click', () => $('#me-menu').hidePopover()));
+  // Страховка к нативному light-dismiss: Esc и клик вне закрывают и при программных событиях
+  const closePops = keep => $$('[popover]').forEach(p => p !== keep && p.matches(':popover-open') && p.hidePopover());
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePops(); });
+  document.addEventListener('click', e => {
+    const t = e.target instanceof Element ? e.target : null, inv = t?.closest('[popovertarget]');
+    closePops(t?.closest('[popover]') || (inv && document.getElementById(inv.getAttribute('popovertarget'))));
+  });
+
+  function renderNotifs() {
+    const list = D.notifications, unread = list.filter(n => n.unread).length;
+    const to = { 'qr-code': '#qr', 'trending-up': '#analytics', 'user-round-check': '#profiles', leaf: '#esg' }; // куда ведёт уведомление
+    $('#notif-list').innerHTML = list.map((n, i) => `<li class="${n.unread ? 'unread' : ''}"><a class="n-item" href="${to[n.icon] || '#dashboard'}" data-n="${i}">
+      <span class="n-ic ${n.icon === 'leaf' ? 'eco' : ''}"><i data-lucide="${esc(n.icon)}" class="i i-sm"></i></span>
+      <div><p>${esc(n.text)}</p><time>${esc(n.time)}</time></div>${n.unread ? '<span class="dot" aria-hidden="true"></span><span class="sr-only">Не прочитано</span>' : ''}</a></li>`).join('');
+    $('#bell-badge').textContent = unread ? fmt(unread) : '';
+    $('#bell').setAttribute('aria-label', unread ? `Уведомления: ${unread} ${plural(unread, 'непрочитанное', 'непрочитанных', 'непрочитанных')}` : 'Уведомления');
+    $('#mark-read').disabled = !unread;
+    icons();
+  }
+  $('#notif-list').addEventListener('click', e => {
+    const a = e.target.closest('[data-n]'); if (!a) return;
+    D.notifications[a.dataset.n].unread = false;
+    closePops(); renderNotifs();
+  });
+  $('#mark-read').addEventListener('click', () => {
+    D.notifications.forEach(n => { n.unread = false; });
+    renderNotifs(); say('Все уведомления отмечены прочитанными');
+  });
+
+  const A = D.admin;
+  ['', '2'].forEach(s => { $('#me-photo' + s).src = A.photo; $('#me-name' + s).textContent = A.name; $('#me-role' + s).textContent = A.role; });
+  $('#me-btn').setAttribute('aria-label', `Меню администратора: ${A.name}, ${A.role}`);
+  /* ---------- Панель управления ---------- */
+  const E = D.employees; // общий массив с data.js: правки сохраняются через D.saveEmployee / D.removeEmployee
+  const SORTS = {
+    name: e => e.name, role: e => e.role, salon: e => salonOf(e).name, scans: e => e.scans,
+    status: e => ['active', 'paused', 'draft'].indexOf(e.status),
+  };
+  const coll = new Intl.Collator('ru-RU');
+  let kpiDone = false;
+
+  function renderKpis() {
+    const st = D.stats, esg = D.esg;
+    $('#today').textContent = new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(today).replace(/^./, c => c.toUpperCase());
+    $('#kpi-paper-note').textContent = `${Math.round(esg.paperSheets / esg.goalSheets * 100)}% цели ${fmt(esg.goalSheets)} листов`;
+    $('#kpi-qr-note').textContent = `на ${D.salons.length} площадках, ${E.filter(e => e.status === 'active').length} активных визиток`;
+    $('#kpi-scans-delta').textContent = `+${fmt1(st.scansDelta)}%`;
+    $('#kpi-book-delta').textContent = `+${fmt1(st.bookingsDelta)}%`;
+    $('#kpi-book-note').textContent = 'к прошлому месяцу';
+    $('#kpi-book-note').closest('.kpi').title = `Конверсия из сканирования в запись: ${fmt1(st.bookings / st.scansMonth * 100)}%`;
+    $('#kpi-spark').innerHTML = spark(D.scansDaily, { w: 92, h: 30 });
+    if (kpiDone) return;
+    kpiDone = true;
+    $$('[data-count]').forEach(el => countUp(el, st[el.dataset.count]));
+    requestAnimationFrame(() => { $('#kpi-paper-fill').style.width = (esg.paperSheets / esg.goalSheets * 100) + '%'; });
+  }
+
+  function visibleRows() {
+    const k = S.sort.key, dir = S.sort.dir === 'asc' ? 1 : -1, get = SORTS[k];
+    return E.filter(e => (S.status === 'all' || e.status === S.status) && matches(e))
+      .sort((a, b) => dir * (typeof get(a) === 'number' ? get(a) - get(b) : coll.compare(get(a), get(b))) || coll.compare(a.name, b.name));
+  }
+
+  function renderTable() {
+    const base = E.filter(matches);
+    $$('#status-tabs button').forEach(b => {
+      const s = b.dataset.status;
+      b.querySelector('.n').textContent = fmt(s === 'all' ? base.length : base.filter(e => e.status === s).length);
+      b.setAttribute('aria-selected', String(s === S.status));
+    });
+    $$('#tbl th[data-sort]').forEach(th => th.dataset.sort === S.sort.key
+      ? th.setAttribute('aria-sort', S.sort.dir === 'asc' ? 'ascending' : 'descending') : th.removeAttribute('aria-sort'));
+    const rows = visibleRows();
+    $('#tbody').innerHTML = rows.map(e => {
+      const s = salonOf(e);
+      return `<tr data-id="${esc(e.id)}">
+        <td class="c-photo">${ava(e, 40)}</td>
+        <td><button type="button" class="nm" data-open="${esc(e.id)}">${hl(e.name)}</button>
+          <div class="meta"><span class="m-role">${hl(e.role)}</span><span class="m-salon">${hl(s.name)} · ${hl(s.city)}</span><span class="m-status">${badge(e.status)}</span></div></td>
+        <td class="c-role"><div class="role">${hl(e.role)}</div></td>
+        <td class="c-salon"><div class="sal"><b>${hl(s.name)}</b><small><i data-lucide="map-pin" class="i" style="width:12px;height:12px"></i>${hl(s.city)}</small></div></td>
+        <td class="c-scans"><div class="sc"><span class="num">${fmt(e.scans)}</span>${sum(e.spark) ? spark(e.spark, { w: 72, h: 24, color: 'var(--ink-3)', fill: false, dotColor: 'var(--accent)' }) : '<span class="muted nodata">нет данных</span>'}</div></td>
+        <td class="c-status">${badge(e.status)}</td>
+        <td class="c-go"><i data-lucide="chevron-right" class="i i-sm"></i></td></tr>`;
+    }).join('');
+    $('#tbl').hidden = !rows.length;
+    $('#tbl-empty').hidden = !!rows.length;
+    $('#tbl-empty-text').textContent = S.q
+      ? `По запросу «${S.q.trim()}» ${S.status !== 'all' ? 'с выбранным статусом ' : ''}визиток нет. Проверьте написание или сбросьте фильтры.`
+      : 'В этой группе пока нет визиток.';
+    const chip = $('#q-chip');
+    chip.hidden = !S.q.trim();
+    chip.querySelector('span').innerHTML = `Поиск: <b>«${esc(S.q.trim())}»</b> — ${fmt(base.length)} ${plural(base.length, 'совпадение', 'совпадения', 'совпадений')}`;
+    $('#tbl-sub').textContent = `${fmt(rows.length)} ${plural(rows.length, 'визитка', 'визитки', 'визиток')} · нажмите на строку, чтобы открыть карточку`;
+    $('#nav-count').textContent = fmt(E.length);
+    icons();
+  }
+
+  function renderChannels(el) {
+    const total = D.stats.scansMonth;
+    const ic = { qr: 'qr-code', nfc: 'nfc', link: 'link' };
+    const tones = ['var(--accent)', '#E57A87', '#F6C9CE']; // доли целого — одна полоса 100%, один тон
+    const pct = c => Math.round(c.share * 100);
+    el.innerHTML = `<div class="ch-total"><b class="num">${fmt(total)}</b><span>сканирований всего</span></div>
+      <div class="ch-stack" role="img" aria-label="${D.channels.map(c => `${c.label} ${pct(c)}%`).join(', ')}">${D.channels.map((c, i) => `<span style="flex:${c.share};background:${tones[i]}"></span>`).join('')}</div>
+      <ul class="ch-legend">${D.channels.map((c, i) => `<li><i style="background:${tones[i]}"></i><span class="ch-name"><i data-lucide="${ic[c.key]}" class="i i-sm"></i>${esc(c.label)}</span><span class="num muted">${fmt(Math.round(total * c.share))}</span><b class="num">${pct(c)}%</b></li>`).join('')}</ul>` +
+      `<p class="ch-note"><i data-lucide="sparkles" class="i i-sm"></i><span>NFC-метки на бейджах дают почти четверть сканирований — стоит выдать их на площадках без меток.</span></p>`;
+  }
+
+  function renderDashboard() {
+    renderKpis();
+    renderTable();
+    const v = D.scansDaily;
+    $('#dscans-sub').textContent = `${fmt(sum(v))} всего · в среднем ${fmt(Math.round(sum(v) / v.length))} в день`;
+    lineChart($('#dash-line'), v, { h: 250 });
+    renderChannels($('#dash-channels'));
+    icons();
+  }
+
+  $('#status-tabs').addEventListener('click', e => {
+    const b = e.target.closest('[data-status]'); if (!b) return;
+    S.status = b.dataset.status; renderTable();
+  });
+  $('#status-tabs').addEventListener('keydown', e => { // стрелки по табам
+    const tabs = $$('#status-tabs button'), i = tabs.indexOf(document.activeElement);
+    const k = { ArrowRight: 1, ArrowLeft: -1 }[e.key]; if (k == null || i < 0) return;
+    const t = tabs[(i + k + tabs.length) % tabs.length]; t.focus(); t.click();
+  });
+  $('#tbl thead').addEventListener('click', e => {
+    const th = e.target.closest('th[data-sort]'); if (!th) return;
+    const k = th.dataset.sort;
+    S.sort = { key: k, dir: S.sort.key === k ? (S.sort.dir === 'asc' ? 'desc' : 'asc') : (k === 'scans' ? 'desc' : 'asc') };
+    renderTable();
+  });
+  $('#tbody').addEventListener('click', e => {
+    const tr = e.target.closest('tr[data-id]'); if (tr) openEmployee(tr.dataset.id, e.target.closest('.nm') || tr.querySelector('.nm'));
+  });
+  /* ---------- Drawer сотрудника и форма (нативный <dialog>: Esc, фокус-ловушка, inert фона) ---------- */
+  const empDlg = $('#emp-dlg'), formDlg = $('#form-dlg');
+  let empId = null, returnFocus = null;
+  const cardUrl = (id, extra = '') => new URL(`card.html?id=${encodeURIComponent(id)}${extra}`, location.href).href;
+
+  [empDlg, formDlg].forEach(dlg => {
+    dlg.addEventListener('click', e => { // клик по фону (сам <dialog> вне контента) закрывает
+      if (e.target === dlg || e.target.closest('[data-close]')) dlg === formDlg ? closeForm() : dlg.close();
+    });
+    dlg.addEventListener('close', () => { hideTip(); returnFocus?.isConnected && returnFocus.focus(); });
+  });
+
+  // Версия превью: после правки iframe перезагружается и читает свежие данные из хранилища
+  let frameVer = 0;
+  function syncFrame(force) {
+    if (force) frameVer++;
+    const frame = $('#emp-frame'), src = `card.html?id=${encodeURIComponent(empId)}&embed=1${frameVer ? '&v=' + frameVer : ''}`;
+    if (frame.getAttribute('src') !== src) frame.src = src;
+  }
+  function openEmployee(id, from) {
+    const e = D.employee(id); if (!e) return;
+    empId = id; returnFocus = from || document.activeElement;
+    syncFrame();
+    $('#emp-url').textContent = `card.html?id=${id}`;
+    renderEmp();
+    if (!empDlg.open) empDlg.showModal();
+    $('[data-close]', empDlg)?.focus();
+    const tr = $(`#tbody tr[data-id="${CSS.escape(id)}"]`);
+    if (tr) { tr.classList.remove('row-flash'); void tr.offsetWidth; tr.classList.add('row-flash'); }
+  }
+
+  function renderEmp() {
+    const e = D.employee(empId); if (!e) return;
+    const s = salonOf(e), rank = [...E].sort((a, b) => b.scans - a.scans).indexOf(e) + 1, last14 = sum(e.spark);
+    $('#emp-head').innerHTML = `${ava(e, 52)}<div class="dr-t"><h2 id="emp-name">${esc(e.name)}</h2><p>${esc(e.role)}</p></div>
+      ${badge(e.status)}<button class="icon-btn" type="button" data-close aria-label="Закрыть карточку"><i data-lucide="x" class="i"></i></button>`;
+    const toggle = e.status === 'active'
+      ? `<button class="btn btn--ghost" type="button" data-emp="toggle"><i data-lucide="clock" class="i i-sm"></i>Поставить на паузу</button>`
+      : `<button class="btn btn--ghost" type="button" data-emp="toggle"><i data-lucide="circle-check" class="i i-sm"></i>${e.status === 'draft' ? 'Опубликовать' : 'Активировать'}</button>`;
+    $('#emp-info').innerHTML = `
+      <div class="mstats">
+        <div class="mstat"><span>Сканирований всего</span><b class="num">${fmt(e.scans)}</b><small>${rank <= E.length && e.scans ? `${rank}-е место в компании` : 'пока без сканирований'}</small></div>
+        <div class="mstat"><span>За 14 дней</span><b class="num">${fmt(last14)}</b>${last14 ? spark(e.spark, { w: 120, h: 26 }) : '<small>нет данных</small>'}</div>
+        <div class="mstat"><span>Опыт</span><b class="num">${fmt(e.experience)} ${plural(e.experience, 'год', 'года', 'лет')}</b><small>в профессии</small></div>
+        <div class="mstat"><span>Визитка</span><b>${e.status === 'active' ? 'Опубликована' : e.status === 'paused' ? 'На паузе' : 'Черновик'}</b><small>публичная ссылка</small></div>
+      </div>
+      <div class="info-box">
+        <h3>Площадка и контакты</h3>
+        <div class="info-row"><i data-lucide="store" class="i i-sm"></i><span><b>${esc(s.name)}</b><br><span class="muted">${esc(s.city)}, ${esc(s.address)}</span></span></div>
+        ${s.hours ? `<div class="info-row"><i data-lucide="clock" class="i i-sm"></i><span>Ежедневно ${s.hours[0]}:00–${s.hours[1]}:00</span></div>` : ''}
+        <div class="info-row"><i data-lucide="phone" class="i i-sm"></i><span class="num">${esc(e.phone)}</span></div>
+        ${e.workPhone ? `<div class="info-row"><i data-lucide="building-2" class="i i-sm"></i><span class="num">${esc(e.workPhone)}${e.workExt ? `, доб. ${esc(e.workExt)}` : ''}</span></div>` : ''}
+        ${e.email ? `<div class="info-row"><i data-lucide="mail" class="i i-sm"></i><a href="mailto:${esc(e.email)}">${esc(e.email)}</a></div>` : ''}
+        ${e.whatsapp ? `<div class="info-row"><i data-lucide="message-circle" class="i i-sm"></i><span class="num">WhatsApp: ${esc(fmtPhone(e.whatsapp))}</span></div>` : ''}
+        ${e.telegram ? `<div class="info-row"><svg class="i i-sm" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg><span>@${esc(e.telegram)}</span></div>` : ''}
+        ${e.tags?.length ? `<div class="tags">${e.tags.map(t => `<span class="badge">${esc(t)}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="emp-actions">
+        <a class="btn btn--primary btn--block" href="card.html?id=${encodeURIComponent(e.id)}${e.status === 'active' ? '' : '&preview=1'}" target="_blank" rel="noopener"><i data-lucide="external-link" class="i i-sm"></i>${e.status === 'active' ? 'Открыть визитку' : 'Открыть превью визитки'}</a>
+        <div class="row2">
+          <button class="btn btn--ghost" type="button" data-emp="qr"><i data-lucide="download" class="i i-sm"></i>Скачать QR (SVG)</button>
+          ${toggle}
+        </div>
+        ${e.status === 'active' ? '' : `<p class="hint">${e.status === 'draft' ? 'Черновик' : 'Визитка на паузе'}: по ссылке и QR-коду клиенты увидят «Визитка временно недоступна», пока вы её не ${e.status === 'draft' ? 'опубликуете' : 'активируете'}.</p>`}
+        <div class="emp-manage">
+          <button class="btn btn--ghost" type="button" data-emp="edit"><i data-lucide="pencil" class="i i-sm"></i>Редактировать</button>
+          <button class="btn btn--danger-ghost" type="button" data-emp="delete"><i data-lucide="trash-2" class="i i-sm"></i><span>Удалить</span></button>
+        </div>
+      </div>`;
+    icons();
+  }
+
+  // Любое изменение сотрудника: сохранить, перерисовать текущий экран, предупредить, если хранилище не приняло
+  function commit(e) {
+    const ok = D.saveEmployee(e);
+    if (!ok) toast('Не удалось сохранить в браузере — изменения пропадут после перезагрузки. Попробуйте фото поменьше.', 'triangle-alert');
+    refreshLists();
+    return ok;
+  }
+  function refreshLists() {
+    if (current === 'dashboard') renderTable();
+    if (current === 'profiles') renderProfiles();
+    if (current === 'qr') renderQr();
+    if (current === 'analytics') renderAnalytics();
+    $('#nav-count').textContent = fmt(E.length);
+    $('#reset-local').hidden = !D.hasLocalChanges();
+    $('#roles').innerHTML = [...new Set(E.map(e => e.role))].map(r => `<option value="${esc(r)}">`).join('');
+  }
+  function setStatus(e, status) {
+    e.status = status;
+    commit(e);
+  }
+  let delTimer;
+  empDlg.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-emp]'); if (!b) return;
+    const e = D.employee(empId);
+    if (b.dataset.emp === 'qr') downloadQr(e);
+    if (b.dataset.emp === 'toggle') {
+      const next = e.status === 'active' ? 'paused' : 'active';
+      setStatus(e, next); renderEmp(); syncFrame(true);
+      $('[data-emp="toggle"]', empDlg).focus();
+      toast(next === 'active' ? `${e.name}: визитка опубликована` : `${e.name}: визитка на паузе`, next === 'active' ? 'circle-check' : 'clock');
+    }
+    if (b.dataset.emp === 'edit') { const back = returnFocus; empDlg.close(); openForm(back, e.id); }
+    if (b.dataset.emp === 'delete') {
+      // Двойное нажатие вместо confirm(): первое «взводит» кнопку, второе удаляет
+      if (!b.classList.contains('armed')) {
+        b.classList.add('armed'); b.querySelector('span').textContent = 'Точно удалить?';
+        clearTimeout(delTimer);
+        delTimer = setTimeout(() => { b.classList.remove('armed'); b.querySelector('span').textContent = 'Удалить'; }, 4000);
+        return;
+      }
+      clearTimeout(delTimer);
+      const at = E.indexOf(e), snap = { ...e };
+      D.removeEmployee(e.id); qrSel.delete(e.id);
+      returnFocus = null; empDlg.close();
+      refreshLists();
+      toast(`Визитка удалена: ${e.name}`, 'trash-2', { label: 'Вернуть', run: () => { D.saveEmployee(snap, at); refreshLists(); toast(`Визитка восстановлена: ${snap.name}`); } });
+    }
+  });
+
+  /* ---------- Форма сотрудника: создание и редактирование визитки ---------- */
+  const form = $('#emp-form'), tagInput = $('#tag-input');
+  form.salon.innerHTML += D.salons.map(s => `<option value="${esc(s.id)}">${esc(s.name)} — ${esc(s.city)}</option>`).join('');
+  $('#roles').innerHTML = [...new Set(E.map(e => e.role))].map(r => `<option value="${esc(r)}">`).join('');
+  const MAX_TAGS = 5;
+  const PH_HINT = $('#ph-hint').textContent, TAG_HINT = $('#tag-hint').textContent, PHONE_ERR = $('#phone-err').textContent;
+  let editId = null, tags = [], photo = null, tried = false, dirty = false;
+
+  // Телефон: храним как «+7 900 123-45-67», в поле форматируем на лету (8… и 9… → +7…)
+  const phoneDigits = v => {
+    let d = String(v || '').replace(/\D/g, '');
+    if (d[0] === '8') d = '7' + d.slice(1); else if (d && d[0] !== '7') d = '7' + d;
+    return d.slice(0, 11);
+  };
+  const fmtPhone = v => {
+    const d = phoneDigits(v); if (!d) return '';
+    const p = d.slice(1);
+    return '+7' + (p && ' ' + p.slice(0, 3)) + (p.length > 3 ? ' ' + p.slice(3, 6) : '') + (p.length > 6 ? '-' + p.slice(6, 8) : '') + (p.length > 8 ? '-' + p.slice(8, 10) : '');
+  };
+  const phoneOwner = v => E.find(x => x.id !== editId && x.phone.replace(/\D/g, '') === phoneDigits(v));
+
+  // ФИО: буквы (кириллица или латиница), дефис, апостроф и пробел внутри — «Анна-Мария», «Салтыков-Щедрин»
+  const NAME_RE = /^[A-Za-zА-Яа-яЁё][A-Za-zА-Яа-яЁё'’\- ]*$/;
+  const cleanPart = v => v.trim().replace(/\s+/g, ' ').replace(/(^|[\s-])([a-zа-яё])/g, (m, a, c) => a + c.toUpperCase());
+  const fio = () => ({ firstName: cleanPart(form.firstName.value), middleName: cleanPart(form.middleName.value), lastName: cleanPart(form.lastName.value) });
+  // Подсказка под полями: как ФИО будет выглядеть на визитке
+  function renderFio() {
+    const n = D.fullName(fio());
+    $('#fio-prev').innerHTML = n ? `На визитке: <b>${esc(n)}</b>` : 'На визитке: Имя Отчество Фамилия';
+    if (!photo) renderPhoto();
+  }
+  const RULES = {
+    firstName: v => NAME_RE.test(v.trim()),
+    middleName: v => !v.trim() || NAME_RE.test(v.trim()),
+    lastName: v => NAME_RE.test(v.trim()),
+    role: v => v.trim().length >= 2,
+    salon: v => !!D.salon(v),
+    experience: (v, el) => !el.validity.badInput && (v === '' || (Number.isInteger(+v) && +v >= 0 && +v <= 60)),
+    phone: v => phoneDigits(v).length === 11 && !phoneOwner(v),
+    whatsapp: v => !v.trim() || phoneDigits(v).length === 11,
+    workPhone: v => !v.trim() || phoneDigits(v).length === 11,
+    workExt: v => /^\d{0,6}$/.test(v.trim()),
+    email: v => !v.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()),
+    telegram: v => !v.trim() || /^@?[A-Za-z0-9_]{5,32}$/.test(v.trim()),
+  };
+  const check = el => {
+    const ok = RULES[el.name](el.value, el);
+    if (el.name === 'phone') {
+      const o = phoneDigits(el.value).length === 11 && phoneOwner(el.value);
+      $('#phone-err').textContent = o ? `Этот номер уже указан на визитке: ${o.name}.` : PHONE_ERR;
+    }
+    el.closest('.field').classList.toggle('invalid', !ok); el.setAttribute('aria-invalid', String(!ok));
+    return ok;
+  };
+  $$('.field .input, .field .select', form).forEach(el => {
+    const err = el.closest('.field').querySelector('.err');
+    err.id ||= 'err-' + el.name; el.setAttribute('aria-describedby', err.id);
+    el.addEventListener('blur', () => (tried || el.value) && check(el));
+    el.addEventListener('input', () => tried && check(el));
+  });
+  // Городской номер — в формате компании: +7 (495) 609-63-86
+  const fmtWork = v => { const d = phoneDigits(v); return d.length === 11 ? `+7 (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7, 9)}-${d.slice(9)}` : v.trim(); };
+  form.workPhone.addEventListener('blur', () => { if (phoneDigits(form.workPhone.value).length === 11) form.workPhone.value = fmtWork(form.workPhone.value); });
+  $('#wa-same').addEventListener('click', () => { form.whatsapp.value = fmtPhone(form.phone.value); dirty = true; if (tried) check(form.whatsapp); });
+  [form.phone, form.whatsapp].forEach(el => el.addEventListener('input', () => {
+    if (el.selectionStart === el.value.length) el.value = fmtPhone(el.value); // правка в середине номера — не мешаем курсору
+  }));
+  form.addEventListener('input', () => { dirty = true; });
+  ['firstName', 'middleName', 'lastName'].forEach(k => form[k].addEventListener('input', renderFio));
+
+  // id = транслит имени: card.html?id=olga-smirnova. При правке не меняется — напечатанные QR продолжают работать
+  const TR = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya' };
+  function newId(name) {
+    const base = [...name.toLowerCase()].map(c => TR[c] ?? c).join('').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'employee';
+    let id = base, n = 2;
+    while (!D.isIdFree(id)) id = `${base}-${n++}`;
+    return id;
+  }
+
+  /* Фото: квадрат 400×400 JPEG прямо в браузере (≈30–60 КБ), чтобы влезало в хранилище */
+  function renderPhoto() {
+    const nm = D.fullName(fio());
+    $('#ph-pic').innerHTML = photo ? `<img src="${esc(photo)}" alt="">` : nm ? esc(initials(nm)) : '<i data-lucide="user-round" class="i"></i>';
+    $('#ph-del').hidden = !photo;
+    $('#ph-up-t').textContent = photo ? 'Заменить фото' : 'Загрузить фото';
+    icons();
+  }
+  function photoHint(msg) { const h = $('#ph-hint'); h.textContent = msg || PH_HINT; h.style.color = msg ? 'var(--danger)' : ''; }
+  function squareJpeg(file, size = 400) {
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth, h = img.naturalHeight, s = Math.min(w, h), out = Math.min(size, s);
+        const c = Object.assign(document.createElement('canvas'), { width: out, height: out }), ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, out, out); ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, (w - s) / 2, (h - s) * .3, s, s, 0, 0, out, out); // портрет: лицо обычно выше центра
+        URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', .85));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('decode')); };
+      img.src = url;
+    });
+  }
+  async function loadPhoto(file) {
+    if (!file) return;
+    if (!/^image\//.test(file.type)) return photoHint('Это не изображение — выберите JPG или PNG.');
+    if (file.size > 25e6) return photoHint('Файл больше 25 МБ — выберите фото поменьше.');
+    const up = $('.ph-up'); up.classList.add('busy');
+    try { photo = await squareJpeg(file); dirty = true; photoHint(); renderPhoto(); }
+    catch { photoHint('Не получилось открыть файл (возможно, HEIC). Сохраните фото как JPG или PNG.'); }
+    finally { up.classList.remove('busy'); $('#ph-file').value = ''; }
+  }
+  $('#ph-file').addEventListener('change', e => loadPhoto(e.target.files[0]));
+  $('#ph-del').addEventListener('click', () => { photo = null; dirty = true; photoHint(); renderPhoto(); $('#ph-file').focus(); });
+  const drop = $('#ph-drop');
+  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('drag'); }));
+  ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, () => drop.classList.remove('drag')));
+  drop.addEventListener('drop', e => { e.preventDefault(); loadPhoto(e.dataTransfer.files[0]); });
+  ['dragover', 'drop'].forEach(t => formDlg.addEventListener(t, e => e.preventDefault())); // мимо зоны — не открываем картинку вместо админки
+
+  /* Теги экспертизы: чипы, Enter/запятая — добавить, Backspace в пустом поле — убрать последний */
+  const allTags = () => [...new Set(E.flatMap(e => e.tags || []))].sort(coll.compare);
+  function renderTags() {
+    $('#tag-list').innerHTML = tags.map((t, i) => `<li>${esc(t)}<button type="button" data-tag="${i}" aria-label="Убрать тег «${esc(t)}»"><i data-lucide="x" class="i i-sm"></i></button></li>`).join('');
+    const full = tags.length >= MAX_TAGS;
+    $('#tag-box').classList.toggle('full', full);
+    $('#tag-hint').textContent = full ? `Максимум ${MAX_TAGS} тегов — уберите лишний, чтобы добавить другой.` : TAG_HINT;
+    const used = new Set(tags.map(norm));
+    $('#tag-sugg').innerHTML = allTags().filter(t => !used.has(norm(t))).map(t => `<option value="${esc(t)}">`).join('');
+    icons();
+  }
+  function addTag(raw) {
+    const t = String(raw).replace(/\s+/g, ' ').trim().replace(/^./, c => c.toUpperCase()).slice(0, 40);
+    if (!t || tags.length >= MAX_TAGS || tags.some(x => norm(x) === norm(t))) return;
+    tags.push(t); dirty = true; renderTags();
+  }
+  function flushTag() { if (tagInput.value.trim()) { tagInput.value.split(',').forEach(addTag); tagInput.value = ''; } }
+  tagInput.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ',') && tagInput.value.trim()) { e.preventDefault(); flushTag(); }
+    else if (e.key === ',') e.preventDefault();
+    else if (e.key === 'Backspace' && !tagInput.value && tags.length) { tags.pop(); dirty = true; renderTags(); }
+  });
+  tagInput.addEventListener('input', e => {
+    if (tagInput.value.includes(',') || e.inputType === 'insertReplacementText' || e.inputType == null) flushTag(); // запятая при вставке или выбор подсказки
+  });
+  tagInput.addEventListener('blur', flushTag);
+  $('#tag-box').addEventListener('click', e => {
+    const b = e.target.closest('[data-tag]');
+    if (b) { tags.splice(+b.dataset.tag, 1); dirty = true; renderTags(); }
+    if (!tags.length || b || e.target === e.currentTarget) tagInput.focus();
+  });
+
+  const syncSubmit = () => {
+    $('#form-submit span').textContent = editId ? 'Сохранить изменения' : form.status.value === 'active' ? 'Создать и опубликовать' : 'Создать черновик';
+  };
+  form.addEventListener('change', e => { if (e.target.name === 'status') syncSubmit(); });
+
+  function openForm(from, id = null) {
+    const e = id ? D.employee(id) : null;
+    returnFocus = from; tried = false; dirty = false; editId = e ? e.id : null; form.reset();
+    $$('.field', form).forEach(f => f.classList.remove('invalid')); $('#form-err').hidden = true;
+    photo = e?.photo || null; tags = e ? [...(e.tags || [])] : []; tagInput.value = '';
+    if (e) {
+      form.firstName.value = e.firstName || ''; form.middleName.value = e.middleName || ''; form.lastName.value = e.lastName || '';
+      form.role.value = e.role; form.salon.value = e.salon;
+      form.experience.value = e.experience || '';
+      form.phone.value = fmtPhone(e.phone);
+      form.whatsapp.value = e.whatsapp ? fmtPhone(e.whatsapp) : '';
+      form.workPhone.value = e.workPhone || ''; form.workExt.value = e.workExt || ''; form.email.value = e.email || '';
+      form.telegram.value = e.telegram ? '@' + e.telegram : '';
+    } else if (current === 'profiles' && S.salon !== 'all') form.salon.value = S.salon;
+    $('#form-title').textContent = e ? 'Редактирование визитки' : 'Новый сотрудник';
+    $('#form-sub').textContent = e ? 'Изменения сразу появятся на визитке. Ссылка и напечатанные QR-коды останутся прежними.' : 'Заполните данные — визитка и QR-код появятся сразу после сохранения.';
+    $('.dr-ic', formDlg).innerHTML = `<i data-lucide="${e ? 'user-pen' : 'user-plus'}" class="i"></i>`;
+    $('#fs-status').hidden = !!e;
+    syncSubmit(); photoHint(); renderPhoto(); renderTags(); renderFio();
+    formDlg.showModal(); form.firstName.focus();
+  }
+  // Закрытие с несохранёнными данными — переспрашиваем
+  function closeForm() {
+    if (dirty && !confirm(editId ? 'Закрыть без сохранения изменений?' : 'Закрыть форму? Введённые данные пропадут.')) return;
+    dirty = false; formDlg.close();
+  }
+  formDlg.addEventListener('cancel', e => { e.preventDefault(); closeForm(); });
+
+  form.addEventListener('submit', ev => {
+    ev.preventDefault(); tried = true; flushTag();
+    const bad = Object.keys(RULES).filter(k => !check(form[k]));
+    if (bad.length) {
+      $('#form-err').hidden = false;
+      $('#form-err').textContent = `Проверьте ${bad.length} ${plural(bad.length, 'поле', 'поля', 'полей')} — подсказки под ними.`;
+      form[bad[0]].focus(); return;
+    }
+    const d = phoneDigits(form.phone.value), wa = phoneDigits(form.whatsapp.value);
+    const data = {
+      ...fio(), role: form.role.value.trim().replace(/\s+/g, ' '), salon: form.salon.value,
+      experience: Math.round(+form.experience.value || 0), tags: [...tags], photo,
+      phone: fmtPhone(d), whatsapp: wa, telegram: form.telegram.value.trim().replace(/^@/, ''),
+      workPhone: form.workPhone.value.trim() ? fmtWork(form.workPhone.value) : '', workExt: form.workExt.value.trim(),
+      email: form.email.value.trim().toLowerCase(),
+    };
+    const prev = editId ? D.employee(editId) : null;
+    data.name = D.fullName(data);
+    const e = prev ? Object.assign(prev, data) : { id: newId(`${data.firstName} ${data.lastName}`), ...data, status: form.status.value, createdAt: Date.now() };
+    dirty = false; formDlg.close();
+    if (!prev) { S.status = 'all'; S.salon = 'all'; S.pstatus = 'all'; q.value = ''; S.q = ''; }
+    if (commit(e)) toast(prev ? `Изменения сохранены: ${e.name}` : e.status === 'active' ? `Визитка опубликована: ${e.name}` : `Черновик визитки создан: ${e.name}`, prev ? 'circle-check' : 'user-plus');
+    const row = $(`#tbody tr[data-id="${CSS.escape(e.id)}"]`) || $(`[data-pid="${CSS.escape(e.id)}"]`);
+    row?.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' });
+    // Сразу показываем результат: карточка с живым превью визитки
+    frameVer++;
+    openEmployee(e.id, row?.querySelector('.nm, .p-open') || null);
+  });
+  /* ---------- Профили сотрудников ---------- */
+  $('#f-salon').innerHTML += D.salons.map(s => `<option value="${esc(s.id)}">${esc(s.name)} — ${esc(s.city)}</option>`).join('');
+  function renderProfiles() {
+    $('#f-salon').value = S.salon; $('#f-status').value = S.pstatus;
+    const list = E.filter(e => (S.salon === 'all' || e.salon === S.salon) && (S.pstatus === 'all' || e.status === S.pstatus) && matches(e));
+    const cities = new Set(D.salons.map(s => s.city)).size;
+    $('#prof-sub').textContent = `${fmt(E.length)} ${plural(E.length, 'сотрудник', 'сотрудника', 'сотрудников')} на ${D.salons.length} площадках и ${cities} ${plural(cities, 'городе', 'городах', 'городах')}`;
+    $('#prof-count').textContent = `Показано ${fmt(list.length)} из ${fmt(E.length)}${S.q.trim() ? ` · поиск «${S.q.trim()}»` : ''}`;
+    const sl = D.salon(S.salon), strip = $('#salon-strip');
+    strip.hidden = !sl;
+    if (sl) {
+      const team = E.filter(e => e.salon === sl.id);
+      strip.innerHTML = `<div><b>${esc(sl.name)}</b><div class="muted" style="font-size:13px">${fmt(team.length)} ${plural(team.length, 'сотрудник', 'сотрудника', 'сотрудников')} · ${fmt(sum(team.map(e => e.scans)))} сканирований</div></div>
+        <span class="info-row"><i data-lucide="map-pin" class="i i-sm"></i>${esc(sl.city)}, ${esc(sl.address)}</span>
+        <span class="info-row"><i data-lucide="clock" class="i i-sm"></i>Ежедневно ${sl.hours[0]}:00–${sl.hours[1]}:00</span>`;
+    }
+    $('#people').innerHTML = list.map(e => {
+      const s = salonOf(e);
+      return `<li class="person" data-pid="${esc(e.id)}">
+        <div class="p-top">${ava(e, 56)}<span class="p-badges">${badge(e.status)}</span></div>
+        <div><button type="button" class="p-open" data-open="${esc(e.id)}">${hl(e.name)}</button><p class="p-role">${hl(e.role)}</p></div>
+        <p class="p-salon"><i data-lucide="map-pin" class="i i-sm"></i><span>${hl(s.name)} · ${hl(s.city)}</span></p>
+        ${e.tags?.length ? `<div class="p-tags">${e.tags.slice(0, 2).map(t => `<span class="badge">${hl(t)}</span>`).join('')}${e.tags.length > 2 ? `<span class="badge">+${e.tags.length - 2}</span>` : ''}</div>` : ''}
+        <div class="p-foot"><span><b class="num">${fmt(e.scans)}</b><small>${plural(e.scans, 'сканирование', 'сканирования', 'сканирований')} всего</small></span>${sum(e.spark) ? spark(e.spark, { w: 88, h: 28, color: 'var(--ink-3)', fill: false, dotColor: 'var(--accent)' }) : '<small>нет данных</small>'}</div></li>`;
+    }).join('');
+    $('#people').hidden = !list.length;
+    $('#people-empty').hidden = !!list.length;
+    $('#nav-count').textContent = fmt(E.length);
+    icons();
+  }
+  $('#f-salon').addEventListener('change', e => { S.salon = e.target.value; renderProfiles(); });
+  $('#f-status').addEventListener('change', e => { S.pstatus = e.target.value; renderProfiles(); });
+  $('#people').addEventListener('click', e => { const b = e.target.closest('.person'); if (b) openEmployee(b.dataset.pid, b.querySelector('.p-open')); });
+  /* ---------- Генератор пакетов QR ---------- */
+  const QRC = { graphite: '#1A202C', red: '#BF1F32', navy: '#1A365D' }; // только тёмные тона: код тёмный на светлом
+  const SIZES = { s: [4, 5], m: [3, 4], l: [2, 3] };
+  const LOGO = '<img src="logo.png" alt="Никамед">'; // логотип для печатных листов
+  let qrSel = new Set(), qrMade = false;
+
+  // Свои модули: мягкие скруглённые квадраты (0,92 модуля) + фирменные скруглённые «глаза»; тихая зона 4 модуля, белый фон.
+  // Цвета заменены на красный/графитовый/тёмно-синий, повторная проверка декодером не выполнялась; круглые точки меньшего размера он не читал.
+  const MOD = 'h.32a.3 .3 0 0 1 .3 .3v.32a.3 .3 0 0 1-.3 .3h-.32a.3 .3 0 0 1-.3-.3v-.32a.3 .3 0 0 1 .3-.3z';
+  function qrSvg(text, color, label = '') {
+    const qr = qrcode(0, 'M'); qr.addData(text); qr.make();
+    const n = qr.getModuleCount(), z = 4, size = n + z * 2;
+    const eye = (r, c) => (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+    let d = '';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      if (qr.isDark(r, c) && !eye(r, c)) d += `M${+(c + z + .34).toFixed(2)} ${+(r + z + .04).toFixed(2)}${MOD}`;
+    }
+    const eyes = [[0, 0], [0, n - 7], [n - 7, 0]].map(([r, c]) =>
+      `<rect x="${c + z + .5}" y="${r + z + .5}" width="6" height="6" rx="1.8" fill="none" stroke="${color}" stroke-width="1"/><rect x="${c + z + 2}" y="${r + z + 2}" width="3" height="3" rx=".9" fill="${color}"/>`).join('');
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="qr" viewBox="0 0 ${size} ${size}" role="img" aria-label="QR-код визитки${label ? ': ' + esc(label) : ''}"><rect width="${size}" height="${size}" fill="#ffffff"/><path d="${d}" fill="${color}"/>${eyes}</svg>`;
+  }
+  function downloadQr(e, color = QRC[$('input[name=qrc]:checked')?.value] || QRC.graphite) {
+    download(`nikamed-qr-${e.id}.svg`, '<?xml version="1.0" encoding="UTF-8"?>\n' + qrSvg(cardUrl(e.id), color, e.name), 'image/svg+xml');
+    toast(`QR-код скачан (SVG): ${e.name}`, 'download');
+  }
+
+  $('#qr-salon').innerHTML += D.salons.map(s => `<option value="${esc(s.id)}">${esc(s.name)} — ${esc(s.city)}</option>`).join('');
+  const qrPool = () => E.filter(e => $('#qr-salon').value === 'all' || e.salon === $('#qr-salon').value);
+
+  function renderQr() {
+    const pool = qrPool();
+    if (!qrSel.size && !qrMade) pool.forEach(e => qrSel.add(e.id));
+    $('#qr-list').innerHTML = pool.map(e => `<li><label>${`<input type="checkbox" value="${esc(e.id)}" ${qrSel.has(e.id) ? 'checked' : ''}>`}${ava(e, 32)}
+      <span><b>${esc(e.name)}</b><small>${esc(e.role)} · ${esc(salonOf(e).name.replace('Никамед ', ''))}</small></span></label></li>`).join('');
+    syncPick();
+    if (qrMade) makeSheets();
+    icons();
+  }
+  function syncPick() {
+    const pool = qrPool(), on = pool.filter(e => qrSel.has(e.id)).length, all = $('#qr-all');
+    all.checked = on === pool.length && on > 0; all.indeterminate = on > 0 && on < pool.length;
+    const [c, r] = SIZES[$('input[name=qrs]:checked').value], pages = Math.ceil(on / (c * r));
+    $('#qr-picked').textContent = `${fmt(on)} из ${fmt(pool.length)}`;
+    $('#qr-eco').innerHTML = on ? `<i data-lucide="leaf" class="i i-sm" style="color:var(--eco)"></i><span>${fmt(on)} ${plural(on, 'код', 'кода', 'кодов')} на ${fmt(pages)} ${plural(pages, 'листе', 'листах', 'листах')} A4 — и ни одного тиража бумажных визиток: данные на карточках обновляются без перепечатки.</span>` : '<span>Отметьте хотя бы одного сотрудника.</span>';
+    icons();
+  }
+  function makeSheets() {
+    const list = qrPool().filter(e => qrSel.has(e.id));
+    const size = $('input[name=qrs]:checked').value, [cols, rows] = SIZES[size], per = cols * rows;
+    const color = QRC[$('input[name=qrc]:checked').value], cap = $('#qr-caption').checked;
+    const salon = D.salon($('#qr-salon').value), pages = Math.max(1, Math.ceil(list.length / per));
+    const dt = new Intl.DateTimeFormat('ru-RU').format(today);
+    let html = '';
+    for (let p = 0; p < pages; p++) {
+      const chunk = list.slice(p * per, p * per + per);
+      html += `<article class="sheet" aria-label="Лист ${p + 1} из ${pages}">
+        <div class="sh"><header class="sh-head"><span class="sh-logo">${LOGO}</span><span class="sh-meta"><b>${salon ? esc(salon.name) : 'Все площадки'}</b><br>Цифровые визитки · ${dt}</span></header>
+        <div class="sh-grid" data-size="${size}" style="--cols:${cols};--rows:${rows}">${chunk.map((e, i) => `<div class="qcard${(i + 1) % cols === 0 ? ' lc' : ''}${Math.floor(i / cols) === rows - 1 ? ' lr' : ''}">
+          ${qrSvg(cardUrl(e.id), color, e.name)}${cap ? `<div><b>${esc(e.name)}</b><small>${esc(e.role)}</small></div>` : ''}
+          <button type="button" class="q-dl" data-qr="${esc(e.id)}" aria-label="Скачать SVG: ${esc(e.name)}"><i data-lucide="download" class="i i-sm"></i></button></div>`).join('')}</div>
+        <footer class="sh-foot"><span>Наведите камеру телефона — контакт сохранится в один тап</span><span><b>НИКАМЕД</b> · лист ${p + 1} из ${pages}</span></footer></div></article>`;
+    }
+    $('#qr-sheets').innerHTML = list.length ? html : '<div class="sheet sheet--empty"><span class="empty-ic"><i data-lucide="users" class="i i-lg"></i></span><b>Никто не выбран</b><p>Отметьте сотрудников слева — лист соберётся автоматически.</p></div>';
+    $('#qr-print').disabled = !list.length;
+    $('#qr-meta').textContent = list.length ? `${fmt(list.length)} ${plural(list.length, 'код', 'кода', 'кодов')} · ${fmt(pages)} ${plural(pages, 'лист', 'листа', 'листов')} A4 · размер ${size.toUpperCase()}` : 'Пакет пуст';
+    icons();
+  }
+  $('#qr-form').addEventListener('submit', ev => {
+    ev.preventDefault();
+    if (!qrPool().some(e => qrSel.has(e.id))) { toast('Отметьте хотя бы одного сотрудника', 'users'); return; }
+    qrMade = true; makeSheets();
+    toast('Пакет QR-кодов готов к печати', 'qr-code');
+    if (innerWidth < 1024) $('#qr-sheets').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+  });
+  $('#qr-form').addEventListener('change', ev => {
+    const t = ev.target;
+    if (t.id === 'qr-salon') { qrSel = new Set(qrPool().map(e => e.id)); return renderQr(); }
+    if (t.id === 'qr-all') qrPool().forEach(e => t.checked ? qrSel.add(e.id) : qrSel.delete(e.id));
+    if (t.closest('#qr-list')) t.checked ? qrSel.add(t.value) : qrSel.delete(t.value);
+    if (t.id === 'qr-all') $$('#qr-list input').forEach(i => { i.checked = t.checked; });
+    syncPick();
+    if (qrMade) makeSheets(); // после первой генерации лист обновляется вживую
+  });
+  $('#qr-sheets').addEventListener('click', ev => { const b = ev.target.closest('[data-qr]'); if (b) downloadQr(D.employee(b.dataset.qr)); });
+  $('#qr-print').addEventListener('click', () => window.print());
+  /* ---------- Аналитика ---------- */
+  const HEAT = ['#FDECEE', '#F8C4CA', '#EE7F8C', '#BF1F32', '#8F0B22']; // одна гамма, светлый → тёмный
+  const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  const DAYS_L = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье'];
+  let heatPos = null;
+
+  function renderAnalytics() {
+    const v = D.scansDaily, n = v.length, tot = sum(v), st = D.stats, maxI = v.indexOf(Math.max(...v));
+    $('#a-stats').innerHTML = [
+      ['Сканирований', fmt(tot), `<span class="delta"><i data-lucide="trending-up" class="i i-sm"></i>+${fmt1(st.scansDelta)}%</span> к прошлому месяцу`],
+      ['В среднем в день', fmt(Math.round(tot / n)), `сегодня — ${fmt(v[n - 1])}`],
+      ['Пиковый день', fmt(v[maxI]), dLong.format(dateOf(maxI, n))],
+      ['Сохранили контакт', fmt(st.contactsSaved), `${fmt1(st.contactsSaved / tot * 100)}% сканирований → vCard`],
+    ].map(([l, b, s]) => `<li><span>${l}</span><b class="num">${b}</b><small>${s}</small></li>`).join('');
+    lineChart($('#an-line'), v, { h: 280 });
+    $('#an-table tbody').innerHTML = v.map((x, i) => `<tr><td>${dLong.format(dateOf(i, n))}</td><td>${fmt(x)}</td></tr>`).reverse().join('');
+    renderChannels($('#an-channels'));
+    renderHeat();
+    const bySalon = D.salons.map(s => {
+      const team = E.filter(e => e.salon === s.id);
+      return { label: s.name.replace('Никамед ', ''), sub: `${s.city} · ${team.length} ${plural(team.length, 'сотрудник', 'сотрудника', 'сотрудников')}`, v: sum(team.map(e => e.scans)), per: team.length ? sum(team.map(e => e.scans)) / team.length : 0 };
+    }).sort((a, b) => b.v - a.v);
+    const best = [...bySalon].sort((a, b) => b.per - a.per)[0], share = Math.round(bySalon[0].v / sum(bySalon.map(r => r.v)) * 100);
+    $('#an-salons').innerHTML = hbars(bySalon, { unit: 'сканирований' }) +
+      `<p class="ch-note"><i data-lucide="sparkles" class="i i-sm"></i><span>${esc(bySalon[0].label)} даёт ${share}% всех сканирований компании${best === bySalon[0] ? ' и лидирует по отдаче на сотрудника' : `. Лучшая отдача на сотрудника — ${esc(best.label)}`}: ${fmt(Math.round(best.per))} ${plural(Math.round(best.per), 'сканирование', 'сканирования', 'сканирований')} на человека.</span></p>`;
+    const top = [...E].sort((a, b) => b.scans - a.scans).slice(0, 8), mx = top[0].scans;
+    $('#an-leader').innerHTML = top.map((e, i) => `<li data-lid="${esc(e.id)}"><span class="rk">${i + 1}</span>${ava(e, 36)}
+      <span class="ln"><button type="button">${esc(e.name)}</button><small>${esc(salonOf(e).name.replace('Никамед ', ''))} · ${esc(e.role)}</small></span>
+      <span class="hb-track" aria-hidden="true"><span class="hb-bar" style="width:${(e.scans / mx * 100).toFixed(1)}%;background:var(--accent)"></span></span>
+      <span class="v num">${fmt(e.scans)}</span></li>`).join('');
+    icons();
+  }
+  $('#an-leader').addEventListener('click', e => { const li = e.target.closest('[data-lid]'); if (li) openEmployee(li.dataset.lid, li.querySelector('button')); });
+
+  function renderHeat() {
+    const H = D.heatmap, flat = H.flat(), max = Math.max(...flat);
+    const step = Math.ceil(max / 5 / 5) * 5; // круглые пороги шкалы
+    const bin = x => Math.min(4, Math.floor(x / step));
+    let peak = [0, 0];
+    H.forEach((row, d) => row.forEach((x, h) => { if (x > H[peak[0]][peak[1]]) peak = [d, h]; }));
+    $('#heat-sub').textContent = `Пик — ${DAYS_L[peak[0]]}, ${peak[1]}:00–${peak[1] + 1}:00. Выходные заметно активнее будней, провал — до 9:00.`;
+    let html = '';
+    H.forEach((row, d) => {
+      html += `<span class="hd">${DAYS[d]}</span>` + row.map((x, h) => `<span class="hc" data-d="${d}" data-h="${h}" style="background:${HEAT[bin(x)]}"></span>`).join('');
+    });
+    html += '<span></span>' + Array.from({ length: 24 }, (_, h) => `<span class="hh">${h % 3 === 0 ? h : ''}</span>`).join('');
+    $('#heat').innerHTML = html;
+    $('#heat-legend').innerHTML = `<span>меньше</span><ol>${HEAT.map((c, i) => `<li><i style="background:${c}"></i>${fmt(step * i)}${i === 4 ? '+' : ''}</li>`).join('')}</ol><span>больше</span>`;
+    const sc = $('#heat').parentElement; // на узком экране карта скроллится — открываем на рабочих часах
+    if (sc.scrollWidth > sc.clientWidth) sc.scrollLeft = sc.scrollWidth * 8 / 24;
+  }
+  const heat = $('#heat');
+  function heatShow(d, h, cx, cy) {
+    heatPos = [d, h];
+    $$('.hc.on', heat).forEach(c => c.classList.remove('on'));
+    const cell = $(`.hc[data-d="${d}"][data-h="${h}"]`, heat); cell.classList.add('on');
+    const val = D.heatmap[d][h];
+    if (cx == null) { const r = cell.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top; }
+    showTip(`<b>${fmt(val)}</b> <span>${plural(val, 'сканирование', 'сканирования', 'сканирований')}</span><small>${DAYS_L[d]}, ${h}:00–${h + 1}:00</small>`, cx, cy);
+    return `${DAYS_L[d]}, ${h}:00: ${fmt(val)} сканирований`;
+  }
+  const heatHide = () => { $$('.hc.on', heat).forEach(c => c.classList.remove('on')); hideTip(); };
+  heat.addEventListener('pointermove', e => { const c = e.target.closest('.hc'); c ? heatShow(+c.dataset.d, +c.dataset.h, e.clientX, e.clientY) : heatHide(); });
+  heat.addEventListener('pointerleave', heatHide);
+  heat.addEventListener('blur', heatHide);
+  heat.addEventListener('focus', () => { const [d, h] = heatPos || [5, 19]; say(heatShow(d, h)); });
+  heat.addEventListener('keydown', e => {
+    const mv = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] }[e.key];
+    if (!mv) return;
+    e.preventDefault();
+    const [d, h] = heatPos || [5, 19];
+    say(heatShow(Math.max(0, Math.min(6, d + mv[0])), Math.max(0, Math.min(23, h + mv[1]))));
+  });
+  /* ---------- ESG ---------- */
+  const esgMonths = D.esg.monthly.map((_, i) => new Date(2025, 9 + i, 1));
+  let esgDone = false;
+  function renderEsg() {
+    const g = D.esg, pct = g.paperSheets / g.goalSheets;
+    $('#esg-lead').textContent = `Это около ${fmt(Math.round(g.paperSheets / 500))} пачек офисной бумаги A4 — столько не пришлось печатать, резать и выбрасывать благодаря цифровым визиткам сотрудников.`;
+    $('#esg-goal-t').textContent = `${fmt(g.paperSheets)} / ${fmt(g.goalSheets)} листов`;
+    $('#esg-left').textContent = `До цели осталось ${fmt(g.goalSheets - g.paperSheets)} листов — при нынешнем темпе это около ${Math.max(1, Math.round((g.goalSheets - g.paperSheets) / g.monthly.at(-1)))} ${plural(Math.max(1, Math.round((g.goalSheets - g.paperSheets) / g.monthly.at(-1))), 'месяца', 'месяцев', 'месяцев')}.`;
+    const R = 92, C = 2 * Math.PI * R;
+    $('#esg-ring').innerHTML = `<svg viewBox="0 0 220 220" role="img" aria-label="Выполнение цели 2026 года: ${Math.round(pct * 100)}%">
+      <circle class="rt" cx="110" cy="110" r="${R}" fill="none" stroke-width="16"/>
+      <circle class="rv" cx="110" cy="110" r="${R}" fill="none" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${esgDone || reduced ? (C * (1 - pct)).toFixed(1) : C.toFixed(1)}"/></svg>
+      <div class="rc" aria-hidden="true"><b>${Math.round(pct * 100)}%</b><span>цели 2026 года</span></div>`;
+    $('#eq-tiles').innerHTML = [
+      ['cloud', fmt(g.co2Kg), 'кг', 'CO₂e не попало в атмосферу', '≈5 г на лист'],
+      ['tree-pine', fmt1(g.trees), 'дерева', 'сохранено от вырубки', `≈${fmt(8300)} листов на дерево`],
+      ['droplets', fmt(g.waterLiters / 1000), 'м³', 'воды сэкономлено', '≈10 л на лист'],
+    ].map(([ic, v, u, l, k]) => `<li><span class="eq-ic"><i data-lucide="${ic}" class="i i-lg"></i></span><b class="num">${v}<small>${u}</small></b><span class="eq-l">${l}</span><span class="eq-n">${k}, оценка по отраслевым коэффициентам</span></li>`).join('');
+    const m = g.monthly;
+    $('#esg-growth').innerHTML = `<i data-lucide="trending-up" class="i" style="width:14px;height:14px"></i>×${fmt1(m.at(-1) / m[0])} за год`;
+    columns($('#esg-cols'), m, esgMonths.map(d => ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][d.getMonth()]),
+      { h: 260, color: 'var(--eco)', unit: 'листов', tipLabels: esgMonths.map(d => new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }).format(d)) });
+    if (!esgDone) {
+      esgDone = true;
+      countUp($('#esg-sheets'), g.paperSheets);
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        $('#esg-track').style.width = pct * 100 + '%';
+        $('#esg-ring .rv')?.setAttribute('stroke-dashoffset', (C * (1 - pct)).toFixed(1));
+      }));
+    } else $('#esg-track').style.width = pct * 100 + '%';
+    icons();
+  }
+
+  // CSV для Excel: UTF-8 с BOM, разделитель «;», десятичная запятая
+  function esgCsv() {
+    const g = D.esg, dec = x => String(x).replace('.', ',');
+    const cell = x => /[;"\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : String(x);
+    const mName = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' });
+    const rows = [
+      ['НИКАМЕД — ESG-отчёт по цифровым визиткам'],
+      ['Дата формирования', new Intl.DateTimeFormat('ru-RU').format(today)],
+      [],
+      ['Показатель', 'Значение', 'Единица'],
+      ['Сэкономлено бумаги', g.paperSheets, 'листов A4'],
+      ['Цель на 2026 год', g.goalSheets, 'листов A4'],
+      ['Выполнение цели', dec(Math.round(g.paperSheets / g.goalSheets * 1000) / 10), '%'],
+      ['Снижение выбросов CO2e', g.co2Kg, 'кг'],
+      ['Сохранено деревьев', dec(g.trees), 'шт.'],
+      ['Сэкономлено воды', dec(g.waterLiters / 1000), 'м3'],
+      ['Активные QR-коды', D.stats.activeQr, 'шт.'],
+      ['Сканирований за 30 дней', D.stats.scansMonth, 'шт.'],
+      [],
+      ['Месяц', 'Листов сэкономлено'],
+      ...g.monthly.map((x, i) => [mName.format(esgMonths[i]).replace(/^./, c => c.toUpperCase()), x]),
+      [],
+      ['Методика: оценка по средним отраслевым коэффициентам (≈5 г CO2e и ≈10 л воды на лист A4; ≈8300 листов на дерево)'],
+    ];
+    const csv = '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n');
+    const stamp = today.toISOString().slice(0, 10);
+    download(`nikamed-esg-${stamp}.csv`, csv, 'text/csv;charset=utf-8');
+    toast('ESG-отчёт скачан (CSV)', 'download');
+  }
+  /* ---------- Роутинг по hash, мобильное меню, запуск ---------- */
+  const TITLES = { dashboard: 'Панель управления', profiles: 'Профили сотрудников', qr: 'Генератор пакетов QR-кодов', analytics: 'Аналитика и сканирование', esg: 'Показатели ESG' };
+  const VIEWS = { dashboard: renderDashboard, profiles: renderProfiles, qr: renderQr, analytics: renderAnalytics, esg: renderEsg };
+  var current = null;
+  function route() {
+    let r = location.hash.slice(1);
+    if (!VIEWS[r]) r = 'dashboard';
+    const first = current === null;
+    current = r;
+    $$('.view').forEach(v => { v.hidden = v.dataset.view !== r; });
+    $$('.nav a').forEach(a => a.dataset.route === r ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+    document.title = `${TITLES[r]} · НИКАМЕД`;
+    hideTip(); closeNav();
+    VIEWS[r]();
+    if (!first) { scrollTo(0, 0); $(`#h-${r}`)?.focus({ preventScroll: true }); }
+  }
+  addEventListener('hashchange', route);
+
+  const side = $('#side'), scrim = $('#scrim'), menuBtn = $('#menu-btn');
+  const mqNav = matchMedia('(max-width: 899px)');
+  function openNav() { side.classList.add('open'); scrim.hidden = false; menuBtn.setAttribute('aria-expanded', 'true'); $('.nav a[aria-current]', side)?.focus(); }
+  function closeNav() {
+    if (!side.classList.contains('open')) return;
+    side.classList.remove('open'); scrim.hidden = true; menuBtn.setAttribute('aria-expanded', 'false');
+    if (side.contains(document.activeElement)) menuBtn.focus();
+  }
+  menuBtn.addEventListener('click', openNav);
+  scrim.addEventListener('click', closeNav);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && side.classList.contains('open')) closeNav(); });
+  mqNav.addEventListener('change', () => { closeNav(); side.inert = false; });
+
+  // Перерисовка графиков при изменении ширины (они строятся по реальной ширине контейнера)
+  let lastW = 0, rt;
+  new ResizeObserver(([en]) => {
+    const w = Math.round(en.contentRect.width);
+    if (Math.abs(w - lastW) < 8) return;
+    lastW = w; clearTimeout(rt); rt = setTimeout(() => current && VIEWS[current](), 120);
+  }).observe($('main'));
+
+  // ESG в сайдбаре
+  const g = D.esg, gp = g.paperSheets / g.goalSheets * 100;
+  $('#gt-now').textContent = fmt(g.paperSheets);
+  $('#gt-goal').textContent = `/ ${fmt(g.goalSheets)}`;
+  $('#gt-pct').textContent = `${Math.round(gp)}%`;
+  requestAnimationFrame(() => { $('#gt-fill').style.width = gp + '%'; });
+
+  renderNotifs();
+  $('#reset-local').hidden = !D.hasLocalChanges();
+  route();
+  icons();
+})();
+</script>
+</body>
+</html>
