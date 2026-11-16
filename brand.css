@@ -1,0 +1,136 @@
+/* НИКАМЕД (ООО «НИКАМЕД») — общие токены и примитивы. Страницы кладут свои стили в собственный <style>.
+   Палитра по фирменному логотипу (logo.png): красный #BF1F32 взят из файла логотипа.
+   Меняется одной правкой в блоке «Бренд НИКАМЕД».
+   Один бренд, без вариантов оформления. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400..900&display=swap');
+
+:root {
+  /* Нейтральные (чистый чёрный не используется) */
+  --white: #FFFFFF;
+  --ink: #2D3748;          /* основной текст, графит: 12.0:1 на белом */
+  --ink-2: #4A5568;        /* вторичный текст: 7.5:1 на белом */
+  --ink-3: #5A6779;        /* третичный текст: 5.7:1 на белом, 5.5:1 на #F7FAFC */
+  --dark: #1A202C;         /* тёмные поверхности (баннер, телефон-рамка) */
+  --surface: #F7FAFC;      /* ультра-светлый серо-голубой: фон страницы и разделов */
+  --surface-2: #EDF2F7;
+  --line: #E2E8F0;
+  --line-strong: #CBD5E0;
+
+  /* Бренд НИКАМЕД */
+  --red: #BF1F32;          /* красный логотипа. Белый текст на нём: 6.1:1; красный текст на белом: 6.1:1 */
+  --red-hover: #9E1828;    /* белый текст: 8.1:1 */
+  --red-soft: #FDECEE;     /* фон бейджей и подсветки; красный текст на нём: 5.2:1 */
+  --red-tint: #FF8A93;     /* светлый красный для тёмных поверхностей: 7.2:1 на --dark */
+
+  /* Семантика */
+  --accent: var(--red);
+  --accent-hover: var(--red-hover);
+  --accent-ink: var(--red);
+  --accent-soft: var(--red-soft);
+  --on-accent: var(--white);
+  --eco: var(--ink);             /* вторичный тёмный (графит): кнопки .btn--eco, ESG-блоки */
+  --eco-soft: var(--surface-2);
+
+  /* Статусы */
+  --success: #0B6B3A;  --success-soft: #E6F4EC;
+  --warning: #8A5300;  --warning-soft: #FFF4E0;
+  --danger:  #B42318;  --danger-soft:  #FEECEB;
+
+  /* Форма, глубина, движение */
+  --radius: 8px;
+  --radius-pill: 6px;      /* чипы, теги, бейджи: аккуратные. Круглое — только через 50% (аватары, точки, соцсети) */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, .04);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, .05);
+  --shadow: 0 10px 15px -3px rgba(0, 0, 0, .06), 0 4px 6px -2px rgba(0, 0, 0, .04);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, .08), 0 10px 10px -5px rgba(0, 0, 0, .04);
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --dur-1: 150ms;
+  --dur-2: 250ms;
+  --dur-3: 420ms;
+
+  /* Типографика */
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fs-xs: 12px; --fs-sm: 14px; --fs-md: 16px; --fs-lg: 18px;
+  --fs-xl: 22px; --fs-2xl: 28px; --fs-3xl: 36px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--white);
+  font-feature-settings: 'cv11', 'ss03';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3, h4 { margin: 0; line-height: 1.2; letter-spacing: -.015em; font-weight: 700; }
+p { margin: 0; }
+img { display: block; max-width: 100%; }
+button, input, select { font: inherit; color: inherit; }
+a { color: inherit; }
+.num { font-variant-numeric: tabular-nums; }
+
+:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; border-radius: 4px; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Иконки: <i data-lucide="…" class="i"></i> или inline <svg class="i"> */
+.i { width: 20px; height: 20px; flex: none; stroke-width: 2; }
+.i-sm { width: 16px; height: 16px; }
+.i-lg { width: 24px; height: 24px; }
+
+/* Кнопки */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 18px;
+  border: 1px solid transparent; border-radius: var(--radius);
+  font-size: 15px; font-weight: 600; line-height: 1; letter-spacing: -.005em;
+  text-decoration: none; cursor: pointer; user-select: none;
+  transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+              box-shadow var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
+}
+.btn:active { transform: scale(.98); }
+.btn--primary { background: var(--accent); color: var(--on-accent); }
+.btn--primary:hover { background: var(--accent-hover); }
+.btn--dark { background: var(--ink); color: var(--white); }
+.btn--dark:hover { background: var(--dark); }
+.btn--ghost { background: var(--white); border-color: var(--line); color: var(--ink); }
+.btn--ghost:hover { background: var(--surface); border-color: var(--line-strong); }
+.btn--eco { background: var(--eco); color: var(--white); }
+.btn--eco:hover { background: var(--dark); }
+.btn--block { width: 100%; }
+
+/* Бейджи и чипы */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 24px; padding: 0 10px; border-radius: var(--radius-pill);
+  font-size: var(--fs-xs); font-weight: 600; line-height: 1; white-space: nowrap;
+  background: var(--surface-2); color: var(--ink-2);
+}
+.badge--accent  { background: var(--accent-soft); color: var(--accent-ink); }
+.badge--success { background: var(--success-soft); color: var(--success); }
+.badge--warning { background: var(--warning-soft); color: var(--warning); }
+.badge--danger  { background: var(--danger-soft); color: var(--danger); }
+.badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.avatar { border-radius: 50%; object-fit: cover; background: var(--surface-2); }
+
+/* Поверхности */
+.panel {
+  background: var(--white); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important;
+  }
+}
