@@ -50,36 +50,8 @@
   const staff = [];
 
   // Демо-сотрудники (вымышленные). status: active | paused | draft
-  const employees = [
-    ...staff,
-    { id: 'anna-sokolova',      name: 'Анна Сергеевна Соколова',      role: 'Руководитель направления ортопедических изделий', salon: 'msk-office',    photo: photo('1559839734-2b71ea197ec2'),    status: 'active', scans: 2814, experience: 14, tags: ['Ортезы и бандажи', 'Тендерные поставки', 'Обучение персонала'] },
-    { id: 'sergey-volkov',      name: 'Сергей Викторович Волков',      role: 'Коммерческий директор',                           salon: 'msk-office',    photo: photo('1472099645785-5658abf4ff4e'),    status: 'active', scans: 3106, experience: 27, tags: ['Дистрибуция', 'Ключевые клиенты'] },
-    { id: 'dmitry-orlov',       name: 'Дмитрий Андреевич Орлов',      role: 'Менеджер по работе с медицинскими организациями', salon: 'msk-office',    photo: photo('1612349317150-e413f6a5b16d'),    status: 'active', scans: 1967, experience: 9,  tags: ['Госзакупки 44-ФЗ', 'Поставки в стационары'] },
-    { id: 'yulia-fedorova',     name: 'Юлия Игоревна Фёдорова',      role: 'Менеджер по работе с ортопедическими салонами',  salon: 'msk-showroom',  photo: photo('1580489944761-15a19d654956'),    status: 'active', scans: 1533, experience: 6,  tags: ['Подбор ассортимента', 'Компрессионный трикотаж'] },
-    { id: 'olga-morozova',      name: 'Ольга Николаевна Морозова',     role: 'Руководитель шоурума',                            salon: 'msk-showroom',  photo: photo('1573497019940-1c28c88b4f3e'),    status: 'active', scans: 986,  experience: 11, tags: ['Демонстрация продукции', 'Партнёрские программы'] },
-    { id: 'mikhail-lebedev',    name: 'Михаил Петрович Лебедев',     role: 'Эксперт по ортопедической обуви', salon: 'msk-showroom', photo: photo('1599566150163-29194dcaad36'), status: 'active', scans: 1188, experience: 8,  tags: ['Ортопедическая обувь', 'Стельки'] },
-    { id: 'elena-vasilieva',    name: 'Елена Владимировна Васильева',    role: 'Менеджер по развитию клиентов',                   salon: 'spb-office',    photo: photo('1594824476967-48c8b964273f'),    status: 'active', scans: 1402, experience: 10, tags: ['Подология', 'Расходные материалы'] },
-    { id: 'artem-pavlov',       name: 'Артём Олегович Павлов',       role: 'Специалист по обучению и реабилитационным решениям', salon: 'spb-office', photo: photo('1612531386530-97286d97c2d2'),    status: 'paused', scans: 612,  experience: 7,  tags: ['Реабилитационное оборудование', 'Семинары для клиентов'] },
-    { id: 'alexey-kozlov',      name: 'Алексей Михайлович Козлов',     role: 'Региональный менеджер',                           salon: 'spb-office',    photo: photo('1560250097-0b93528c311a'),    status: 'active', scans: 1054, experience: 12, tags: ['Дилерская сеть', 'B2B-партнёрства'] },
-    { id: 'irina-kuznetsova',   name: 'Ирина Александровна Кузнецова',    role: 'Менеджер по ортопедическим стелькам и обуви',     salon: 'ekb-office',    photo: photo('1438761681033-6461ffad8d80'),    status: 'active', scans: 1245, experience: 8,  tags: ['Индивидуальные стельки', 'Ортопедическая обувь'] },
-    { id: 'daria-popova',       name: 'Дарья Дмитриевна Попова',       role: 'Менеджер по продажам',                            salon: 'ekb-office',    photo: photo('1544005313-94ddf0286df2'),    status: 'draft',  scans: 0,    experience: 1,  tags: ['Подбор изделий'] },
-    { id: 'ekaterina-novikova', name: 'Екатерина Павловна Новикова', role: 'Менеджер по детской ортопедии',                   salon: 'kzn-office',    photo: photo('1629909613654-28e377c37b09'),    status: 'active', scans: 874,  experience: 5,  tags: ['Детская ортопедия', 'Тендеры'] },
-    { id: 'nikita-smirnov',     name: 'Никита Алексеевич Смирнов',     role: 'Менеджер по партнёрским программам',                    salon: 'kzn-office',    photo: photo('1500648767791-00dcc994a43e'), status: 'active', scans: 721,  experience: 3,  tags: ['Партнёрские программы', 'Дилерская сеть'] },
-    { id: 'maxim-egorov',       name: 'Максим Евгеньевич Егоров',      role: 'Менеджер по работе с аптечными сетями',                  salon: 'msk-office',    photo: photo('1607990281513-2c110a25bd8c'), status: 'paused', scans: 338,  experience: 2,  tags: ['Аптечные сети', 'Компрессионный трикотаж'] },
-  ].map((e, j) => {
-    if (e.staff) return { ...withName(e), spark: Array(14).fill(0) };
-    const i = j - staff.length; // нумерация демо-данных прежняя: телефоны и графики не меняются
-    const r = rng(i + 7);
-    const n = String(i + 1).padStart(2, '0');
-    const tgNick = 'nikamed_' + e.id.split('-')[1];
-    return {
-      ...withName(e),
-      phone: `+7 900 000-${n}-${String(10 + i * 3).padStart(2, '0')}`,
-      whatsapp: `7900000${n}${String(10 + i * 3).padStart(2, '0')}`, // для https://wa.me/<номер>
-      telegram: tgNick,                                            // для https://t.me/<ник>
-      spark: Array.from({ length: 14 }, (_, d) => Math.round((e.scans / 30) * (0.55 + r() * 0.9) * (d % 7 >= 5 ? 1.3 : 1))),
-    };
-  });
+  // Реальные профили загружаются из Supabase; публичный JS не содержит персональных данных.
+  const employees = [];
 
   // 30 дней сканирований, последний элемент — сегодня
   const r = rng(42);
