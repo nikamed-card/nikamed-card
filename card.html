@@ -523,8 +523,9 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-(() => {
+(async () => {
   const D = window.NIKAMED;
   const $ = (s, r = document) => r.querySelector(s);
   const html = document.documentElement;
@@ -547,7 +548,31 @@
     toastTimer = setTimeout(() => t.classList.remove('is-on'), 2600);
   }
 
-  const emp = D.employee(params.get('id') || 'anna-sokolova');
+  const SUPABASE_URL = 'https://erldfmctcpnvwvryifbh.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_zuEeS00FIxNR0Lt2e7tpOg_5TnFF8-y';
+  const employeeId = params.get('id') || 'anna-sokolova';
+  let emp = null, salon = null;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/employee_cards?id=eq.${encodeURIComponent(employeeId)}&select=*`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    if (!response.ok) throw new Error('Не удалось загрузить визитку');
+    const rows = await response.json();
+    const row = rows[0];
+    if (row) {
+      emp = {
+        ...row, salon: row.salon_id, workPhone: row.work_phone || '',
+        workExt: row.work_ext || '', firstName: (row.name || '').split(' ')[0] || '',
+        lastName: (row.name || '').split(' ').at(-1) || ''
+      };
+      salon = {
+        id: row.salon_id, name: row.salon_name || '', city: row.salon_city || '',
+        address: row.salon_address || '', hours: row.salon_hours || [9,18]
+      };
+    }
+  } catch (error) {
+    console.error('Supabase card load failed:', error);
+  }
   // Черновики и приостановленные профили публично не показываем; превью в iframe (админка, витрина) и ?preview — показываем
   const unpublished = emp && emp.status !== 'active' && !html.classList.contains('embed') && !params.has('preview');
   if (!emp || unpublished) {
@@ -565,7 +590,7 @@
   // Неразрывный пробел после предлогов и сокращений: «по оптовым», «ул. Тверская» не разъезжаются по строкам
   const nb = s => s.replace(/(^|[\s«(])(в|во|к|ко|с|со|у|о|об|от|по|на|за|из|до|и|а|ул\.|д\.|корп\.|пр\.)\s+/gi, '$1$2 ')
     .replace(/\s(\d+)(?=,|$)/g, ' $1'); // номер дома не отрывается от улицы: «Малышева, 5»
-  const salon = D.salon(emp.salon);
+  salon = salon || D.salon(emp.salon);
   const firstName = emp.name.split(' ')[0];
   const tags = emp.tags || [];
   const expText = emp.experience > 0 ? `Стаж ${emp.experience} ${plural(emp.experience, 'год', 'года', 'лет')}` : '';
@@ -577,7 +602,7 @@
     s.setAttribute('role', 'img'); s.setAttribute('aria-label', img.alt || emp.name);
     img.replaceWith(s);
   };
-  const phoneDigits = emp.phone.replace(/\D/g, '');
+  const phoneDigits = String(emp.phone || '').replace(/\D/g, '');
 
   // ---------- Ссылка для шаринга ----------
   function shareUrl(keepEmbed) {
