@@ -949,7 +949,7 @@
       'BEGIN:VEVENT', `UID:${start}-${emp.id}@nikamed.ru`, `DTSTAMP:${utc(Date.now())}`, `DTSTART:${utc(start)}`, `DTEND:${utc(start + 20 * 6e4)}`,
       `SUMMARY:${esc('Встреча · НИКАМЕД')}`,
       `LOCATION:${esc(`${salon.name}, ${salon.city}, ${salon.address}`)}`,
-      `DESCRIPTION:${esc(`Встреча или звонок, 20 минут. Представитель НИКАМЕД: ${emp.name}. Телефон: ${emp.phone}`)}`,
+      `DESCRIPTION:${esc(`Встреча или звонок, 20 минут. Представитель НИКАМЕД: ${emp.name}. Рабочий телефон: ${emp.workPhone || ''}${emp.workExt ? ', доб. ' + emp.workExt : ''}`)}`,
       'BEGIN:VALARM', 'TRIGGER:-PT2H', 'ACTION:DISPLAY', `DESCRIPTION:${esc('Встреча с представителем НИКАМЕД')}`, 'END:VALARM',
       'END:VEVENT', 'END:VCALENDAR',
     ], 'Встреча НИКАМЕД.ics', 'text/calendar;charset=utf-8');
