@@ -1,4 +1,4 @@
-// Демо-данные платформы цифровых визиток НИКАМЕД (ООО «НИКАМЕД»). Люди, телефоны, адреса и ники вымышлены.
+// Публичные демонстрационные данные интерфейса. Реальные контакты сотрудников в этом файле не хранятся.
 // Подключается обычным <script src="data.js"> (работает и с file://), отдаёт window.NIKAMED.
 // Реальные данные компании (юр. лицо, адрес головного офиса, телефоны) — с nikamed.ru.
 // Остальные площадки (склад, шоурум, региональные офисы) — демо-значения: замените на актуальные адреса.
@@ -46,17 +46,8 @@
   // WhatsApp и Telegram не указаны — плитки на визитке скрыты, включаются в админке.
   // Если такой сотрудник раньше был добавлен вручную в админке, та запись заменяется этой (см. «Замена» ниже).
   const OFFICE = '+7 (495) 609-63-86';
-  const staff = [
-    { id: 'aleksandr-lakhmotko', name: 'Александр Александрович Лахмотко', role: 'Заместитель генерального директора по развитию',
-      phone: '+7 915 436-77-57', workExt: '7361', email: 'lakhmotko.aa@nikamed.ru' },
-    { id: 'olga-novikova', name: 'Ольга Ильинична Новикова', role: 'Медицинский директор',
-      phone: '+7 910 000-99-62', workExt: '373', email: 'novikova.oi@nikamed.ru' },
-    { id: 'anna-fedosova', name: 'Анна Валерьевна Федосова', role: 'Заместитель генерального директора по работе с медицинским сообществом',
-      phone: '+7 916 675-42-92', workExt: '200', email: 'fedosova@nikamed.ru' },
-    { id: 'elena-chutchenko', name: 'Елена Анатольевна Чутченко', role: 'Директор по закупкам и управлению товарными запасами',
-      phone: '+7 905 712-91-73', workExt: '172', email: 'chutchenko@nikamed.ru' },
-  ].map(e => ({ salon: 'msk-office', photo: `photos/${e.id}.jpg`, status: 'active', scans: 0, experience: 0, tags: [],
-    whatsapp: '', telegram: '', workPhone: OFFICE, staff: true, ...e }));
+  // Реальные сотрудники загружаются только из Supabase employee_cards; в публичном JS контактов нет.
+  const staff = [];
 
   // Демо-сотрудники (вымышленные). status: active | paused | draft
   const employees = [
@@ -105,9 +96,7 @@
   }));
 
   // ---------- Визитки, созданные и изменённые в админке ----------
-  // Сервера нет, поэтому правки хранятся в localStorage браузера. Их видят все страницы на том же адресе
-  // (admin.html, card.html, index.html). Для настоящей публикации (QR на чужих телефонах) этот блок
-  // заменяется запросами к API — интерфейс saveEmployee / removeEmployee остаётся тем же.
+  // Локальное хранилище оставлено только для демонстрационных записей интерфейса. Реальные QR-карточки читаются из Supabase.
   const LS_KEY = 'nikamed.cards.v1';
   const EDITABLE = ['firstName', 'middleName', 'lastName', 'role', 'salon', 'phone', 'whatsapp', 'telegram', 'workPhone', 'workExt', 'email', 'photo', 'experience', 'tags', 'status'];
   const baseIds = new Set(employees.map(e => e.id));
