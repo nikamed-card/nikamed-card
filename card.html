@@ -734,9 +734,11 @@
   });
 
   // ---------- Связь ----------
-  $('#c-call').href = 'tel:+' + phoneDigits;
-  $('#c-call-sub').textContent = emp.phone;
-  $('#c-call').setAttribute('aria-label', `Позвонить: ${emp.phone}`);
+  if (phoneDigits) {
+    $('#c-call').href = 'tel:+' + phoneDigits;
+    $('#c-call-sub').textContent = emp.phone;
+    $('#c-call').setAttribute('aria-label', `Позвонить: ${emp.phone}`);
+  } else $('#c-call').remove();
   // Рабочий телефон с добавочным: «,» в tel: — пауза, после соединения номер наберёт добавочный сам
   const workDigits = String(emp.workPhone || '').replace(/\D/g, ''), ext = String(emp.workExt || '').replace(/\D/g, '');
   const workText = emp.workPhone ? `${emp.workPhone}${ext ? `, доб. ${ext}` : ''}` : '';
@@ -788,7 +790,7 @@
       `FN:${esc(emp.name)}`,
       'ORG:ООО «НИКАМЕД»',
       `TITLE:${esc(emp.role)}`,
-      `TEL;TYPE=CELL:+${phoneDigits}`,
+      ...(phoneDigits ? [`TEL;TYPE=CELL:+${phoneDigits}`] : []),
       ...(workDigits ? [`TEL;TYPE=WORK,VOICE:+${workDigits}${ext ? ',' + ext : ''}`] : []),
       ...(emp.email ? [`EMAIL;TYPE=INTERNET,WORK:${emp.email}`] : []),
       `ADR;TYPE=WORK:;;${esc(salon.address)};${esc(salon.city)};;${esc(salon.zip || '')};Россия`,
