@@ -1219,21 +1219,26 @@
     experience:Number(e.experience || 0), tags:e.tags || [], status:e.status || 'draft',
     scans:Number(e.scans || 0), spark:e.spark || [], staff:Boolean(e.staff)
   });
-  const localSave = D.saveEmployee, localRemove = D.removeEmployee;
   D.saveEmployee = (e, at=0) => {
-    const ok = localSave(e,at);
+    const normalized = mapEmployee(toDbEmployee(e));
+    const index = D.employees.findIndex(row => row.id === e.id);
+    if (index >= 0) D.employees.splice(index,1,normalized);
+    else D.employees.splice(Math.max(0,Math.min(at,D.employees.length)),0,normalized);
     sb.from('employees').upsert(toDbEmployee(e),{onConflict:'id'}).then(({error})=>{
       if(error){console.error(error);alert('Не удалось сохранить изменения в защищённой базе. Проверьте соединение и повторите попытку.');}
     });
-    return ok;
+    return true;
   };
   D.removeEmployee = id => {
-    const ok = localRemove(id);
+    const index = D.employees.findIndex(row => row.id === id);
+    if(index >= 0) D.employees.splice(index,1);
     sb.from('employees').delete().eq('id',id).then(({error})=>{
-      if(error){console.error(error);alert('Не удалось удалить запись из защищённой базы. Обновите страницу и повторите попытку.');}
+      if(error){console.error(error);alert('Не удалось удалить запись из защищённой базе. Обновите страницу и проверьте результат.');}
     });
-    return ok;
+    return true;
   };
+  D.hasLocalChanges = () => false;
+  D.resetLocal = () => {};
   const logoutButton = document.createElement('button');
   logoutButton.type='button'; logoutButton.textContent='Выйти'; logoutButton.setAttribute('aria-label','Выйти из панели');
   logoutButton.style.cssText='margin-left:auto;border:1px solid #d0d5dd;background:#fff;border-radius:9px;padding:9px 14px;cursor:pointer';
