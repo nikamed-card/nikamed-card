@@ -69,66 +69,34 @@
 
   // ---------- Визитки, созданные и изменённые в админке ----------
   // Локальное хранилище оставлено только для демонстрационных записей интерфейса. Реальные QR-карточки читаются из Supabase.
+  // Browser storage must never be a source of employee records.
+  // Clear the legacy cache on this browser and keep demo helpers memory-only.
   const LS_KEY = 'nikamed.cards.v1';
-  const EDITABLE = ['firstName', 'middleName', 'lastName', 'role', 'salon', 'phone', 'whatsapp', 'telegram', 'workPhone', 'workExt', 'email', 'photo', 'experience', 'tags', 'status'];
+  try { localStorage.removeItem(LS_KEY); } catch {}
+  const EDITABLE = ['firstName','middleName','lastName','role','salon','phone','whatsapp','telegram','workPhone','workExt','email','photo','experience','tags','status'];
   const baseIds = new Set(employees.map(e => e.id));
-  let store = { upserts: {}, removed: [] };
-  try {
-    const s = JSON.parse(localStorage.getItem(LS_KEY));
-    if (s && typeof s === 'object') store = { upserts: s.upserts || {}, removed: Array.isArray(s.removed) ? s.removed : [] };
-  } catch { /* приватный режим или битые данные — работаем на демо-данных */ }
-
-  const digits = p => String(p || '').replace(/\D/g, '');
-  // Новый сотрудник: без сканирований и истории, но со всеми полями, которые ждут страницы
+  const store = { upserts: {}, removed: [] };
   const normalize = u => withName({
-    photo: null, status: 'draft', scans: 0, experience: 0, tags: [], telegram: '',
-    ...u, whatsapp: u.whatsapp ?? digits(u.phone), spark: Array(14).fill(0), // '' — WhatsApp нет; старые записи без поля — мобильный
+    photo:null,status:'draft',scans:0,experience:0,tags:[],telegram:'',
+    ...u,whatsapp:u.whatsapp ?? '',spark:Array(14).fill(0)
   });
-  // Замена: визитка, созданная вручную в админке для сотрудника, который теперь есть в staff
-  // (тот же id или те же имя и фамилия), удаляется — показываем новую. Демо-тёзки не трогаем.
-  const key = e => { const p = e.firstName || e.lastName ? e : splitName(e.name); return `${p.firstName} ${p.lastName}`.toLowerCase().replace(/ё/g, 'е'); };
-  const staffKeys = new Set(staff.map(e => key(withName(e))));
-  const STAFF_ADDED = Date.parse('2026-10-21T00:00:00+03:00'); // заменяем только записи, созданные до появления staff
-  let replaced = false;
-  Object.values(store.upserts).forEach(u => {
-    if (u && u.createdAt && u.createdAt < STAFF_ADDED && (baseIds.has(u.id) || staffKeys.has(key(u)))) { delete store.upserts[u.id]; replaced = true; }
-  });
-
-  store.removed.forEach(id => { const i = employees.findIndex(e => e.id === id); if (i >= 0) employees.splice(i, 1); });
-  Object.values(store.upserts).forEach(u => {
-    if (!u || !u.id) return;
-    const i = employees.findIndex(e => e.id === u.id);
-    if (i >= 0) employees[i] = withName({ ...employees[i], ...(u.firstName || u.lastName ? {} : splitName(u.name)), ...u });
-    else employees.unshift(normalize(u)); // новые — сверху списка, последние добавленные первыми
-  });
-
-  function persist() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(store)); return true; } catch { return false; }
-  }
-  if (replaced) persist();
-  // Сохраняет нового или изменённого сотрудника. false — хранилище недоступно/переполнено (правка живёт до перезагрузки)
-  // at — позиция вставки в списке (для «Вернуть» после удаления)
-  function saveEmployee(e, at = 0) {
-    const rec = { id: e.id };
-    EDITABLE.forEach(k => { if (e[k] !== undefined) rec[k] = e[k]; });
-    rec.name = fullName(rec);
-    if (!baseIds.has(e.id)) rec.createdAt = store.upserts[e.id]?.createdAt || e.createdAt || Date.now();
-    store.upserts[e.id] = rec;
-    store.removed = store.removed.filter(id => id !== e.id);
-    const i = employees.findIndex(x => x.id === e.id);
-    if (i >= 0) Object.assign(employees[i], withName(rec));
-    else employees.splice(Math.min(at, employees.length), 0, { ...normalize(rec), ...(e.spark ? { scans: e.scans, spark: e.spark } : {}) });
-    return persist();
+  function persist() { return true; }
+  function saveEmployee(e, at=0) {
+    const rec = {id:e.id};
+    EDITABLE.forEach(k => {if(e[k]!==undefined) rec[k]=e[k];});
+    rec.name=fullName(rec);
+    const i=employees.findIndex(x=>x.id===e.id);
+    if(i>=0) Object.assign(employees[i],withName(rec));
+    else employees.splice(Math.max(0,Math.min(at,employees.length)),0,{...normalize(rec),...(e.spark?{scans:e.scans,spark:e.spark}:{})});
+    return true;
   }
   function removeEmployee(id) {
-    delete store.upserts[id];
-    if (baseIds.has(id) && !store.removed.includes(id)) store.removed.push(id);
-    const i = employees.findIndex(e => e.id === id);
-    if (i >= 0) employees.splice(i, 1);
-    return persist();
+    const i=employees.findIndex(e=>e.id===id);
+    if(i>=0) employees.splice(i,1);
+    return true;
   }
-  const isIdFree = id => !baseIds.has(id) && !employees.some(e => e.id === id);
-  const hasLocalChanges = () => Object.keys(store.upserts).length > 0 || store.removed.length > 0;
+  const isIdFree = id => !baseIds.has(id) && !employees.some(e=>e.id===id);
+  const hasLocalChanges = () => false;
   function resetLocal() { try { localStorage.removeItem(LS_KEY); } catch {} }
 
   const NIKAMED = {
