@@ -179,15 +179,37 @@
   </main>
 <script src="data.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
-(() => {
+(async () => {
   const D = window.NIKAMED;
   const $ = s => document.querySelector(s);
   const nf = new Intl.NumberFormat('ru-RU');
-  const people = D.employees.filter(e => e.status === 'active');
+  let people = [];
+  try {
+    const response = await fetch('https://erldfmctcpnvwvryifbh.supabase.co/rest/v1/employee_cards?select=*', {
+      headers: { apikey: 'sb_publishable_zuEeS00FIxNR0Lt2e7tpOg_5TnFF8-y',
+        Authorization: 'Bearer sb_publishable_zuEeS00FIxNR0Lt2e7tpOg_5TnFF8-y' }
+    });
+    if (!response.ok) throw new Error('Не удалось загрузить список визиток');
+    const rows = await response.json();
+    people = rows.map(row => ({
+      ...row, salon: row.salon_id, firstName: (row.name || '').split(' ')[0] || '',
+      lastName: (row.name || '').split(' ').at(-1) || ''
+    }));
+    D.employees.splice(0,D.employees.length,...people);
+  } catch (error) { console.error(error); }
+
   const frame = $('#frame'), screen = $('#screen'), stage = $('.stage');
   const q = new URLSearchParams(location.search);
-  let id = people.some(p => p.id === q.get('id')) ? q.get('id') : people[0].id;
+  let id = people.some(p => p.id === q.get('id')) ? q.get('id') : people[0]?.id;
+  if (!people.length) {
+    $('#people').textContent = 'Публичные визитки пока не опубликованы.';
+    $('#picked').textContent = 'Скоро здесь появятся визитки сотрудников НИКАМЕД';
+    $('#open').hidden = true; $('#scan').hidden = true; $('#screen').hidden = true;
+    $('#stats').innerHTML = '';
+    return;
+  }
 
   $('#stats').innerHTML = [
     [D.stats.paperSaved, 'листов бумаги сэкономлено'],
