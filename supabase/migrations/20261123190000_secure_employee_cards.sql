@@ -15,7 +15,9 @@ create policy "Public can read active employee card fields"
 on public.employees for select to anon
 using (status = 'active');
 
--- Public projection intentionally excludes personal mobile, WhatsApp, and Telegram.
+-- Remove any earlier column grants, then expose only the fields used on QR cards.
+revoke all (id,name,first_name,middle_name,last_name,role,salon_id,phone,whatsapp,telegram,work_phone,work_ext,email,photo,experience,tags,status,scans,spark,staff,created_at,updated_at)
+on public.employees from anon;
 grant select (id,name,role,salon_id,work_phone,work_ext,email,photo,experience,tags)
 on public.employees to anon;
 
