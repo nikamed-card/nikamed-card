@@ -1144,12 +1144,101 @@
 <p class="sr-only" id="sr-live" aria-live="polite"></p>
 
 <script src="data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
-(() => {
+(async () => {
   'use strict';
+  const SUPABASE_URL = 'https://erldfmctcpnvwvryifbh.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_zuEeS00FIxNR0Lt2e7tpOg_5TnFF8-y';
+  const ADMIN_UID = '9b4b128d-7ebf-4403-8ab1-5a986dd5782d';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+  const authCss = document.createElement('style');
+  authCss.textContent = `
+    .auth-gate{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:24px;background:#f5f6f7;font:16px system-ui}
+    .auth-card{width:min(100%,420px);padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:20px;box-shadow:0 20px 70px #18223018}
+    .auth-card h1{margin:0 0 8px;font-size:24px;color:#17212b}.auth-card p{color:#667085;line-height:1.5}
+    .auth-card label{display:block;margin:18px 0 6px;font-size:13px;font-weight:650;color:#344054}
+    .auth-card input{width:100%;height:48px;padding:0 13px;border:1px solid #d0d5dd;border-radius:10px;font:inherit}
+    .auth-card button{width:100%;height:48px;margin-top:20px;border:0;border-radius:10px;background:#1c5b50;color:white;font:600 15px system-ui;cursor:pointer}
+    .auth-error{min-height:20px;color:#b42318;font-size:13px;margin-top:12px}
+  `;
+  document.head.append(authCss);
+  const gate = document.createElement('section');
+  gate.className = 'auth-gate';
+  gate.innerHTML = `<form class="auth-card"><h1>НИКАМЕД</h1><p>Вход в защищённую панель управления</p>
+    <label for="auth-email">Рабочая почта</label><input id="auth-email" type="email" autocomplete="username" required>
+    <label for="auth-password">Пароль</label><input id="auth-password" type="password" autocomplete="current-password" required>
+    <button type="submit">Войти</button><div class="auth-error" role="alert"></div></form>`;
+  let { data: { session } } = await sb.auth.getSession();
+  if (!session || session.user.id !== ADMIN_UID) {
+    if (session) await sb.auth.signOut();
+    document.body.append(gate);
+    await new Promise(resolve => {
+      const form = gate.querySelector('form');
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const button = form.querySelector('button'), error = gate.querySelector('.auth-error');
+        button.disabled = true; button.textContent = 'Проверка…'; error.textContent = '';
+        const { data, error: signInError } = await sb.auth.signInWithPassword({
+          email: gate.querySelector('#auth-email').value.trim(),
+          password: gate.querySelector('#auth-password').value
+        });
+        if (signInError || !data.session || data.user.id !== ADMIN_UID) {
+          if (data.session) await sb.auth.signOut();
+          error.textContent = signInError ? 'Не удалось войти. Проверьте почту и пароль.' : 'У этой учётной записи нет прав администратора.';
+          button.disabled = false; button.textContent = 'Войти'; return;
+        }
+        session = data.session; gate.remove(); resolve();
+      });
+    });
+  }
   const D = window.NIKAMED;
+  const { data: employeeRows, error: employeeError } = await sb.from('employees').select('*');
+  const { data: salonRows, error: salonError } = await sb.from('salons').select('*');
+  if (employeeError || salonError) {
+    document.body.innerHTML = '<main style="padding:40px;font:16px system-ui">Не удалось загрузить защищённые данные. Обновите страницу или обратитесь к администратору.</main>';
+    console.error(employeeError || salonError); return;
+  }
+  const mapEmployee = e => ({
+    ...e, salon: e.salon_id, firstName: e.first_name || '', middleName: e.middle_name || '',
+    lastName: e.last_name || '', workPhone: e.work_phone || '', workExt: e.work_ext || '',
+    scans: e.scans || 0, spark: e.spark || Array(14).fill(0), tags: e.tags || []
+  });
+  D.employees.splice(0, D.employees.length, ...(employeeRows || []).map(mapEmployee));
+  D.salons.splice(0, D.salons.length, ...(salonRows || []).map(s => ({...s, hours:s.hours || [9,18]})));
+  const toDbEmployee = e => ({
+    id:e.id, name:e.name || [e.firstName,e.middleName,e.lastName].filter(Boolean).join(' '),
+    first_name:e.firstName || '', middle_name:e.middleName || '', last_name:e.lastName || '',
+    role:e.role || '', salon_id:e.salon || null, phone:e.phone || null,
+    whatsapp:e.whatsapp || null, telegram:e.telegram || null, work_phone:e.workPhone || null,
+    work_ext:e.workExt || null, email:e.email || null, photo:e.photo || null,
+    experience:Number(e.experience || 0), tags:e.tags || [], status:e.status || 'draft',
+    scans:Number(e.scans || 0), spark:e.spark || [], staff:Boolean(e.staff)
+  });
+  const localSave = D.saveEmployee, localRemove = D.removeEmployee;
+  D.saveEmployee = (e, at=0) => {
+    const ok = localSave(e,at);
+    sb.from('employees').upsert(toDbEmployee(e),{onConflict:'id'}).then(({error})=>{
+      if(error){console.error(error);alert('Не удалось сохранить изменения в защищённой базе. Проверьте соединение и повторите попытку.');}
+    });
+    return ok;
+  };
+  D.removeEmployee = id => {
+    const ok = localRemove(id);
+    sb.from('employees').delete().eq('id',id).then(({error})=>{
+      if(error){console.error(error);alert('Не удалось удалить запись из защищённой базы. Обновите страницу и повторите попытку.');}
+    });
+    return ok;
+  };
+  const logoutButton = document.createElement('button');
+  logoutButton.type='button'; logoutButton.textContent='Выйти'; logoutButton.setAttribute('aria-label','Выйти из панели');
+  logoutButton.style.cssText='margin-left:auto;border:1px solid #d0d5dd;background:#fff;border-radius:9px;padding:9px 14px;cursor:pointer';
+  logoutButton.addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
+  document.querySelector('.topbar')?.append(logoutButton);
   const nf = new Intl.NumberFormat('ru-RU');
   const fmt = n => nf.format(n);
   const fmt1 = n => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(n);
