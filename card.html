@@ -560,7 +560,7 @@
     const row = rows[0];
     if (row) {
       emp = {
-        ...row, salon: row.salon_id, workPhone: row.work_phone || '',
+        ...row, status: 'active', salon: row.salon_id, workPhone: row.work_phone || '',
         workExt: row.work_ext || '', firstName: (row.name || '').split(' ')[0] || '',
         lastName: (row.name || '').split(' ').at(-1) || ''
       };
